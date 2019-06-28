@@ -31,8 +31,8 @@
 //Arduino Leonardo
   #define PIN_NR 14
   #define ANALOG_PINS 6
-  HardwareSerial& chainSerial = Serial;
-  HardwareSerial& pcSerial = Serial;
+  HardwareSerial& chainSerial = Serial1;
+  Serial_& pcSerial = Serial;
 #endif
 
 
