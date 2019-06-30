@@ -7,6 +7,10 @@
 #define MASTER
 //#define SLAVE
 
+#define MASTER_ID 1 // Change if you have more than one master board in your system
+
+#define PC_ID 99 // do not touch
+
 // Enable or disable the serial chain function. 
 #define SERIAL_CHAIN
 
@@ -216,6 +220,7 @@ void sendData() {
       dataSerial.print(", ");
     }
   }
+  dataSerial.print(";");
   dataSerial.print(type);
   dataSerial.println("}");
 }
