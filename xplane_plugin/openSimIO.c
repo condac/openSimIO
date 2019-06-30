@@ -257,19 +257,22 @@ void parseInputPin(char* data) {
   	}
   }
   if(analog != NULL) {
-    //display("Found Analog %s", analog);
+    display("Found Analog %s", analog);
     int var = 0;
+    //sscanf (analog, "%s %d", pinName, &var);
+
     char* slask = strstr(analog, " ");
     sscanf (slask, "%d", &var);
     char seps[] = " ";
     pinName = strtok(analog, seps);
-    //display("value %d %s", var, pinName);
+    display("value %d , %s", var, pinName);
+    float ftemp = var * 1.0;
+    setAnalogData(1, 0, pinName, (float)ftemp);
 
-
-    if (testDataRef != NULL)	{
+    /*if (testDataRef != NULL)	{
       float temp = ((float)var/512.0) - 1.0;
   		XPLMSetDataf(testDataRef,temp);
-  	}
+  	}*/
 
   }
 }
@@ -283,8 +286,12 @@ void parseToken(char* data) {
   token = strtok(data, seps);
 
   while (token != NULL)  {
-    //display("tokens %s", token);
-    parseInputPin(token);
+    display("tokens %s %d", token, test);
+    char* tempString = malloc(300);
+    char* tmp = tempString;
+    strcpy(tempString, token);
+    parseInputPin(tempString);
+    free(tmp);
     token = strtok(NULL, seps);
     test++;
   }
@@ -295,7 +302,7 @@ void parseMessage(char* data) {
   char seps[] = ";";
   char* token;
   int test = 1;
-
+  
   token = strtok(data, seps);
   if (token != NULL) {
     //display("first token %s", token);
