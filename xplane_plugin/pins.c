@@ -5,7 +5,7 @@ typedef struct  {
 
 	int master;
   int slave;
-  int iotype;
+  int ioMode;
   XPLMDataRef dataRef;
   float pinMin;
   float pinMax;
@@ -37,13 +37,23 @@ pin_struct* lineToStruct( char* line) {
   char ioTypeString[32];
   char dataRefString[512];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;%512[^;];%f;%f;", &newPin->master, &newPin->slave, &newPin->pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax, dataRefString, &newPin->xplaneMin, &newPin->xplaneMax );
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;", &newPin->master,
+                                                                                         &newPin->slave,
+                                                                                         &newPin->pinNameString,
+                                                                                         &newPin->ioMode,
+                                                                                         &newPin->reverse,
+                                                                                         &newPin->center,
+                                                                                         &newPin->pinMin,
+                                                                                         &newPin->pinMax,
+                                                                                         dataRefString,
+                                                                                         &newPin->xplaneMin,
+                                                                                         &newPin->xplaneMax );
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
   if(conversionCount != 11) {
       display("Error! converting config line %s", line);
       return NULL;
   } else {
-    display("master %d slave %d %s %s %d %f %f %f %s ", newPin->master, newPin->slave, &newPin->pinNameString, ioTypeString, newPin->reverse, newPin->center, newPin->pinMin, newPin->pinMax, dataRefString);
+    display("master %d slave %d %s %d %d %f %f %f %s ", newPin->master, newPin->slave, &newPin->pinNameString, &newPin->ioMode, newPin->reverse, newPin->center, newPin->pinMin, newPin->pinMax, dataRefString);
     newPin->dataRef = XPLMFindDataRef(dataRefString);
     if (newPin->dataRef == NULL)	{
       display("dataRef invalid %s", dataRefString);
@@ -105,10 +115,33 @@ void setAnalogPin() {
 float mapValue(float value, float min, float max, float center, float outMin, float outMax, int reverse) {
   float out = ((float)value/512.0) - 1.0;
 
+  if (value>max) {
+    value = max;
+  }
+  if (value<min) {
+    value = min;
+  }
+
+  if (value>center) {
+    value = value - center;
+    float scale = outMax / (max-center) ;
+    out = value * scale;
+  } else {
+    value = value - center;
+    float scale = outMin / (min - center);
+    if (scale < 0) {
+      scale = scale * (-1.0);
+    }
+    out = value * scale;
+  }
+  if (reverse == 1) {
+    out = out*-1.0;
+  }
+
   return out;
 }
-void setAnalogData(int master, int slave, char* pinName, float value) {
-  display("setAnalogData %s %f", pinName, value);
+void setAnalogData(int master, int slave, char* pinName, int value) {
+  display("setAnalogData %s %d", pinName, value);
   for ( int i=0; i<nrOfPins;i++) {
 
     if (strcmp(pinName, pins[i].pinNameString) == 0) {
@@ -122,11 +155,38 @@ void setAnalogData(int master, int slave, char* pinName, float value) {
         XPLMSetDatai(pins[i].dataRef,setValue);
       } else if (type == xplmType_Float) {
         float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        display("setAnalogData setting float %s %f", pinName, setValue);
+        //display("setAnalogData setting float %s %f", pinName, setValue);
         XPLMSetDataf(pins[i].dataRef,setValue);
       } else if (type == xplmType_Double) {
         double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        display("setAnalogData setting double %s %f", pinName, setValue);
+        //display("setAnalogData setting double %s %f", pinName, setValue);
+        XPLMSetDatad(pins[i].dataRef,setValue);
+      }
+    }
+  }
+
+}
+
+void setDigitalData(int master, int slave, char* pinName, int value) {
+  display("setDigitalData %s %d", pinName, value);
+  for ( int i=0; i<nrOfPins;i++) {
+
+    if (strcmp(pinName, pins[i].pinNameString) == 0) {
+      display("found pinname %s", pinName);
+
+      int type = XPLMGetDataRefTypes(pins[i].dataRef);
+
+      if (type == xplmType_Int) {
+        int setValue = (int) value;
+        display("setDigitalData setting int %s %d", pinName, setValue);
+        XPLMSetDatai(pins[i].dataRef,setValue);
+      } else if (type == xplmType_Float) {
+        float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        //display("setAnalogData setting float %s %f", pinName, setValue);
+        XPLMSetDataf(pins[i].dataRef,setValue);
+      } else if (type == xplmType_Double) {
+        double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        //display("setAnalogData setting double %s %f", pinName, setValue);
         XPLMSetDatad(pins[i].dataRef,setValue);
       }
     }

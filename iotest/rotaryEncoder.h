@@ -62,6 +62,7 @@ bool getRotationType1(int pinIn1, int pinIn2) {
         
         pin1 = digitalRead(pinIn1);
         pin2 = digitalRead(pinIn2);
+        
       }
     }
     //pcSerial.println(rotationArray[pinIn1]);

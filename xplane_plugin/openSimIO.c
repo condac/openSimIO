@@ -240,39 +240,26 @@ void parseInputPin(char* data) {
   char* digital = strstr(data, "D"); // this also removes leading spaces
   char* analog = strstr(data, "A");
 
-  char* pinName = "";
+  char pinName[6];
 
   if(digital != NULL) {
-    //display("Found Digital %s", digital);
-    //int start = strstr(data+digital, " ");
+    display("Found Digital %s", digital);
     int var = 0;
-    char* slask = strstr(digital, " ");;
-    sscanf (slask, "%d", &var);
-    char seps[] = " ";
-    pinName = strtok(digital, seps);
-    //display("value %d %s", var, pinName);
+    sscanf(digital, "%4[^ ] %d", pinName, &var);
 
-    if (gDataRef != NULL)	{
-  		XPLMSetDatai(gDataRef,var);
-  	}
+    display("value %d , %s ", var, pinName);
+
+    setDigitalData(1, slaveId, pinName, var);
   }
   if(analog != NULL) {
     display("Found Analog %s", analog);
     int var = 0;
-    //sscanf (analog, "%s %d", pinName, &var);
+    sscanf(analog, "%4[^ ] %d", pinName, &var);
 
-    char* slask = strstr(analog, " ");
-    sscanf (slask, "%d", &var);
-    char seps[] = " ";
-    pinName = strtok(analog, seps);
-    display("value %d , %s", var, pinName);
     float ftemp = var * 1.0;
-    setAnalogData(1, 0, pinName, (float)ftemp);
+    display("value %d , %s float %f", var, pinName, ftemp);
 
-    /*if (testDataRef != NULL)	{
-      float temp = ((float)var/512.0) - 1.0;
-  		XPLMSetDataf(testDataRef,temp);
-  	}*/
+    setAnalogData(1, slaveId, pinName, var);
 
   }
 }
@@ -302,8 +289,13 @@ void parseMessage(char* data) {
   char seps[] = ";";
   char* token;
   int test = 1;
-  
-  token = strtok(data, seps);
+  int masterId;
+  char inputString[4000];
+  display("parseMessage data %s", data);
+  sscanf (data, "{%d;%d;%4000[^;];", &masterId, &slaveId, inputString);
+  display("parseMessage master:%d slave:%d string: %s", masterId, slaveId, inputString);
+  parseToken(inputString);
+  /*token = strtok(data, seps);
   if (token != NULL) {
     //display("first token %s", token);
   }
@@ -315,7 +307,7 @@ void parseMessage(char* data) {
   token = strtok(NULL, seps);
   if (token != NULL) {
     parseToken(token);
-  }
+  }*/
 
 }
 

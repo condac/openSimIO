@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 1
+#define FRAMERATE 4
 
 // ############
 // Plugins
@@ -102,6 +102,7 @@ void setup() {
   pinsConfig[5] = DI_INPUT_PULLUP;
   pinsConfig[6] = DI_ROTARY_ENCODER_TYPE1;
   pinsConfig[7] = NOTUSED;
+  pinsConfig[DIGITAL_PIN_COUNT+0] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+2] = AI_FILTER;
   
