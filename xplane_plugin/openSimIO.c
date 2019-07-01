@@ -10,7 +10,7 @@
 	#include <windows.h>
 #endif
 #if LIN
-	#include <GL/gl.h>
+	#include <GL/gl.h> // apt install mesa-common-dev
 #elif __GNUC__
 	#include <OpenGL/gl.h>
 #else
