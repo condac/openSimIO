@@ -97,7 +97,10 @@ void setupPins(int configArray[], int numberOfPins) {
     case DO_LOW:    // just set the pin to GND 
       pinMode(i, OUTPUT);
       digitalWrite(i,LOW);
-      break;          
+      break;  
+    case DO_BOOL:    // set outputmode 
+      pinMode(i, OUTPUT);
+      break;         
     case DI_ROTARY_ENCODER_TYPE1:    // same as with pullup, only setup initiation is different
       pinMode(i, INPUT_PULLUP);
       pinMode(i+1, INPUT_PULLUP);
@@ -120,7 +123,7 @@ void setValue(int pin, int val) {
     case 0:    // not configured
       // do nothing
       break;
-    case DO_OUTPUT:    // 
+    case DO_BOOL:    // 
       digitalWrite(pin,val);
       break;
     

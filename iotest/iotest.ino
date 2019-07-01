@@ -7,7 +7,7 @@
 #define MASTER
 //#define SLAVE
 
-#define MASTER_ID 13 // Change if you have more than one master board in your system
+#define MASTER_ID 1 // Change if you have more than one master board in your system
 
 #define PC_ID 99 // do not touch
 
@@ -93,7 +93,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  /*pinsConfig[3] = DO_LOW;
+  pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
   pinsConfig[6] = DI_ROTARY_ENCODER_TYPE1;
@@ -101,8 +101,9 @@ void setup() {
   pinsConfig[DIGITAL_PIN_COUNT+0] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+2] = AI_FILTER;
-  */
-
+  
+  pinsConfig[13] = DO_BOOL;
+  
   pcSerial.println("boot");
   wdt_reset();
   setupDigitalPins();
@@ -199,6 +200,16 @@ void checkAnalogPinChanged( int pin) {
 }*/
 
 void sendData() {
+  bool changes = false;
+  for (int i = 0; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i++) {
+    if (pin_changed[i]) {
+      changes = true;
+      break;
+    }
+  }
+  if (changes != true) {
+    return;
+  }
   dataSerial.print("{99;");
   #ifdef MASTER
   dataSerial.print(MASTER_ID);

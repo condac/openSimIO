@@ -161,7 +161,7 @@ PLUGIN_API int XPluginStart(
 			MyFlightLoopCallback,	/* Callback */
 			1.0,					/* Interval */
 			NULL);					/* refcon not used. */
-	return g_window != NULL;
+	return 1;//g_window != NULL;
 }
 
 PLUGIN_API void	XPluginStop(void)
@@ -292,7 +292,7 @@ void parseMessage(char* data) {
   int masterId;
   char inputString[4000];
   //display("parseMessage data %s", data);
-  sscanf (data, "{%d;%d;%4000[^;];", &masterId, &slaveId, inputString);
+  sscanf (data, "{99;%d;%d;%4000[^;];", &masterId, &slaveId, inputString);
   //display("parseMessage master:%d slave:%d string: %s", masterId, slaveId, inputString);
   parseToken(inputString);
   /*token = strtok(data, seps);
@@ -378,6 +378,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 
     //display("received %i bytes: %s\n", n, (char *)buf);
   }
+	sendDataToArduino(cport_nr);
 
 
 	/* Write the data to a file. */

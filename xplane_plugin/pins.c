@@ -1,5 +1,6 @@
 #include "openSimIO.h"
-#include "iotypes.h"
+#include <stdio.h>
+#include <string.h>
 
 typedef struct  {
 
@@ -15,6 +16,9 @@ typedef struct  {
   int reverse;
   int pinNr;
   char pinNameString[10];
+	int output;
+	int prevValue;
+	float prevValueF;
 
 } pin_struct;
 
@@ -54,7 +58,15 @@ pin_struct* lineToStruct( char* line) {
       return NULL;
   } else {
     display("master %d slave %d %s %d %d %f %f %f %s ", newPin->master, newPin->slave, &newPin->pinNameString, &newPin->ioMode, newPin->reverse, newPin->center, newPin->pinMin, newPin->pinMax, dataRefString);
-    newPin->dataRef = XPLMFindDataRef(dataRefString);
+
+		if (newPin->ioMode > 127) {
+			newPin->output = 1;
+		}
+		else {
+			newPin->output = 0;
+		}
+		newPin->dataRef = XPLMFindDataRef(dataRefString);
+
     if (newPin->dataRef == NULL)	{
       display("dataRef invalid %s", dataRefString);
       return NULL;
@@ -141,11 +153,11 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
   return out;
 }
 void setAnalogData(int master, int slave, char* pinName, int value) {
-  //display("setAnalogData %s %d", pinName, value);
+  display("setAnalogData %s %d", pinName, value);
   for ( int i=0; i<nrOfPins;i++) {
 
     if (strcmp(pinName, pins[i].pinNameString) == 0) {
-      //display("found pinname %s", pinName);
+      display("found pinname %s", pinName);
 
       int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
@@ -155,7 +167,7 @@ void setAnalogData(int master, int slave, char* pinName, int value) {
         XPLMSetDatai(pins[i].dataRef,setValue);
       } else if (type == xplmType_Float) {
         float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        //display("setAnalogData setting float %s %f", pinName, setValue);
+        display("setAnalogData setting float %s %f", pinName, setValue);
         XPLMSetDataf(pins[i].dataRef,setValue);
       } else if (type == xplmType_Double) {
         double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
@@ -194,7 +206,40 @@ void setDigitalData(int master, int slave, char* pinName, int value) {
 
 }
 
-void setDigitalPin() {
+void setDigitalPin(int cport_nr,int pin, int value ) {
+	char out[512];
+	int count = 0;
+ // send digital data to arduino
+	if (pins[pin].output == 1) {
+		if (pins[pin].prevValue != value) {
 
+			int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+			display("write serial:%s", out);
+			RS232_SendBuf(cport_nr, out, len+1);
+			pins[pin].prevValue = value;
+		}
+	}
+}
+void sendDataToArduino(int cport_nr) {
+	char out[512];
+	int count = 0;
 
+	for (int i=0;i<nrOfPins;i++) {
+		if (pins[i].output == 1) {
+			int type = XPLMGetDataRefTypes(pins[i].dataRef);
+
+      if (type == xplmType_Int) {
+
+        setDigitalPin(cport_nr,i,XPLMGetDatai(pins[i].dataRef) );
+      } else if (type == xplmType_Float) {
+        //float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        //display("setAnalogData setting float %s %f", pinName, setValue);
+        //XPLMSetDataf(pins[i].dataRef,setValue);
+      } else if (type == xplmType_Double) {
+        //double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        //display("setAnalogData setting double %s %f", pinName, setValue);
+        //XPLMSetDatad(pins[i].dataRef,setValue);
+      }
+		}
+	}
 }
