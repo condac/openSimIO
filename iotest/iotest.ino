@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 4
+#define FRAMERATE 1
 
 // ############
 // Plugins
@@ -43,7 +43,7 @@ String type = BOARD;
 #include <avr/wdt.h> // Watchdog interupt // 20 bytes for setup and 2 bytes for each reset, no memory
 
 int pinsData[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; 
-
+int pinsExtra[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; 
 bool pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 
@@ -59,7 +59,7 @@ bool pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 long frametime;
 long pingtime;
-#define PING_INTERVAL 1000
+#define PING_INTERVAL 5000
 
 #ifdef TIME_DEBUG
 long looptime;
@@ -93,7 +93,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  pinsConfig[3] = DO_LOW;
+  /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
   pinsConfig[6] = DI_ROTARY_ENCODER_TYPE1;
@@ -101,7 +101,7 @@ void setup() {
   pinsConfig[DIGITAL_PIN_COUNT+0] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+2] = AI_FILTER;
-  
+  */
 
   pcSerial.println("boot");
   wdt_reset();
@@ -139,9 +139,12 @@ void loop() {
                                 serialtime = millis() - serialtime;
                                 chaintime = millis();
                                 #endif
-  parseSerial();
+
   #ifdef MASTER
   parsePCSerial();
+  #endif
+  #ifdef SERIAL_CHAIN
+  parseSerial();
   #endif
                                 #ifdef TIME_DEBUG
                                 Serial.flush();
@@ -228,6 +231,7 @@ void sendData() {
   dataSerial.println("}");
 }
 
+
 void parseSerial() {
   // Check if the serial data is for me
   // if not send it to next device in chain
@@ -236,7 +240,7 @@ void parseSerial() {
       int id = chainSerial.parseInt();
       if ( id == 1 ) {
         // data is for me
-        doSomething();
+        doSomething(chainSerial);
         return;
       } 
       else if (id > 99) {
@@ -278,23 +282,38 @@ void parseSerial() {
 
 }
 
+void waitForData(int nr) {
+  while (chainSerial.available() < nr) {
+    // nop
+    asm("nop;");
+  }
+}
 #ifdef MASTER
 void parsePCSerial() {
   // Check if the serial data is for me
   // if not send it to next device in chain
   while (pcSerial.available() > 0) {
     if (pcSerial.read() == '{') {
-      
+      waitForData(3);
       int masterid = pcSerial.parseInt();
+      waitForData(3);
       char data = pcSerial.read(); // read the ; character
+      waitForData(3);
       int slaveid = pcSerial.parseInt();
+
+      pcSerial.print("got master");
+      pcSerial.print(masterid);
+      
+      pcSerial.print(" slave");
+      pcSerial.print(slaveid);
       
       if (masterid == MASTER_ID) {
+        pcSerial.println("data for me or slaves");
         // data for me or my slaves
       
         if ( slaveid == 0 ) {
           // data is for me
-          doSomething();
+          doSomething(pcSerial);
           return;
         } 
         else if ( slaveid > 0 ) {
@@ -310,10 +329,12 @@ void parsePCSerial() {
         }
       }
       else if (masterid > 0) {
+        pcSerial.println("else if");
         // relay to other masters???
         
       }
       else {
+        pcSerial.println("broadcast");
         // broadcast?
       }
     }
@@ -365,25 +386,121 @@ void relaySerialFromPC(int id) {
 }
 #endif
 
-void doSomething() {
+void doSomething(HardwareSerial& inSerial) {
   // message for me
   char data;
   
   pcSerial.print("message for me: ");
-  while (chainSerial.available() <= 0) {}
-  data = chainSerial.read();
+  waitForData(1);
+  data = inSerial.read(); // read the ; char
+  waitForData(3);
+  int messageType = inSerial.parseInt();
+  if (messageType == 0) {
+    // set pin message
+    handleSetPinMessage(inSerial);
+  }else if (messageType == 1) {
+    // set config
+    handleConfigMessage(inSerial);
+  }else if (messageType == 2) {
+    // set config and save
+    handleConfigMessage(inSerial);
+    saveConfig();
+  }
+
+}
+
+int readPinNr(HardwareSerial& inSerial, char sep) {
+  char da[5];
+  int counter = 0;
+  char data;
+  waitForData(1);
+  data = inSerial.read();
+  if (data == '}') {
+    return -1;
+  }
+  while (data != ',') {
+    // read data until we find ','
+    da[counter] = data;
+    counter++;
+    waitForData(1);
+    data = inSerial.read();
+    if (counter == 4) {
+      break;
+    }
+  }
+  da[counter] = '\0'; // replace , with end of string char
+  int pinNr = 0;
+  if (da[0] == 'D') {
+    // all good
+    da[0] = ' ';
+  }else if (da[0] == 'A') {
+    // all good add offset for analog pin
+    pinNr = pinNr + DIGITAL_PIN_COUNT;
+    da[0] = ' ';
+  } else {
+    // not good
+    return -1;
+  }
+  int x = atoi(da);
+  pinNr = pinNr + x;
+  return pinNr;
+}
+void handleSetPinMessage(HardwareSerial& inSerial) {
+  pcSerial.print("handleSetPinMessage: ");
+  char data;
+  
   while (data != '}') {
     pcSerial.print(data);
-    while (chainSerial.available() <= 0) {
+    while (inSerial.available() <= 0) {
       
     }
-    data = chainSerial.read();
+    data = inSerial.read();
     
   }
   // end of message
   pcSerial.println(data);
 }
 
+void handleConfigMessage(HardwareSerial& inSerial) {
+  // parse the message {13;0;2;D3,1,0;A2,4,3;}
+  // from this position       ^_____________
+  
+  pcSerial.print("handleConfigMessage: ");
+  char data;
+  waitForData(2);
+  data = inSerial.read(); // read ; char
+  while( data == ';') {
+    int pinNr = readPinNr(inSerial, ',');
+    if (pinNr == -1) {
+      break;
+    }
+    int pinmode = inSerial.parseInt();
+    waitForData(1);
+    data = inSerial.read();
+    int pinExtra = inSerial.parseInt();
+    pcSerial.print("found pinnr: ");
+    pcSerial.print(pinNr);
+    pcSerial.print("mode: ");
+    pcSerial.print(pinmode);
+    pcSerial.print("extra: ");
+    pcSerial.println(pinExtra);
+    setConfig(pinNr, pinmode, pinExtra);
+    waitForData(2);
+    data = inSerial.read();
+    pcSerial.println(data);
+  }
+  
+  setupAllPins();
+  pcSerial.println("end handleConfig");
+}
+
+void setConfig(int nr, int mode, int extra) {
+  pinsConfig[nr] = mode;
+  pinsExtra[nr] = extra; 
+}
+void saveConfig() {
+  // TODO
+}
 void relayToPC() {
   // message to PC from slave
   char data;

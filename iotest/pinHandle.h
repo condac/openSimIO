@@ -3,8 +3,7 @@
 // All types of configurations a pin can have is described in "iotypes.h"
 // Not sure if pinHandle is best English, send me an issue on github if you know better name ;)
 
-int pinsConfig[DIGITAL_PIN_COUNT]; // this array keeps the configuration a pin have
-int a_pinsConfig[ANALOG_PIN_COUNT]; // this array keeps the configuration a pin have
+int pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; // this array keeps the configuration a pin have
 
 
 void checkPinChanged( int pin) {
@@ -73,11 +72,11 @@ void handleDigitalPins() {
 }
 
 
-void handleAnalogPins() {
+/*void handleAnalogPins() {
   // not used, digital and analog pins now share arrays
   handlePins(a_pinsConfig, ANALOG_PIN_COUNT);
   
-}
+}*/
 
 void setupPins(int configArray[], int numberOfPins) {
   for (int i = 0; i<numberOfPins; i++) {
@@ -108,7 +107,9 @@ void setupPins(int configArray[], int numberOfPins) {
     }
   }
 }
-
+void setupAllPins() {
+  setupPins(pinsConfig, DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT);
+}
 void setupDigitalPins() {
   setupPins(pinsConfig, DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT);
 }
