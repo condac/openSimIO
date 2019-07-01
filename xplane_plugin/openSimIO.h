@@ -43,7 +43,6 @@
 #ifdef USE_PRINTF_DEBUG
 #include <execinfo.h>
 #endif
-#include <libudev.h>	// sudo apt-get install libudev-dev
 #include <linux/hidraw.h>
 #elif defined(WINDOWS) || defined(WINDOWS64)
 #define APL 0
@@ -76,7 +75,7 @@ XPLM200—X-Plane 9.00 & newer
 #define XPLM300 1
 #define XPLM301 1
 
-#include "XPLMDisplay.h"
+#include "XPLMDisplay.h" // download xplane SDK and put in SDK folder https://developer.x-plane.com/sdk/plugin-sdk-downloads/
 #include "XPLMGraphics.h"
 #include "XPLMUtilities.h"
 #include "XPLMDataAccess.h"
