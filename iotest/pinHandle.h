@@ -37,6 +37,24 @@ void readAnalogPinFilter( int pin) {
   }
 }
 
+void read3way_2( int pin, int extra) {
+  // this function is very special for our simulator because of the way it is wired. 
+  bool currentState = digitalRead(pin);
+  bool currentState2 = digitalRead(extra);
+
+  if (currentState && currentState2) {
+    pinsData[pin] = 0;
+  } else if (!currentState && currentState2) {
+    pinsData[pin] = 10;
+  } else if (currentState && !currentState2) {
+    pinsData[pin] = 30;
+  } else {
+    // this should not happen, but it might during transition so we set the middle value
+    pinsData[pin] = 20;
+  }
+  
+}
+
 void handlePins(int pinArray[], int numberOfPins) {
 
   for (int i = 0; i<numberOfPins; i++) {
@@ -61,6 +79,9 @@ void handlePins(int pinArray[], int numberOfPins) {
       getRotationType1(i, i+1); // getRotation returns true if changed
       break;
     #endif
+    case DI_3WAY_2:    // 
+      read3way_2(i, pinsExtra[i]);
+      break;
     }
   }
   
@@ -106,7 +127,18 @@ void setupPins(int configArray[], int numberOfPins) {
       pinMode(i+1, INPUT_PULLUP);
       configArray[i+1] = NOTUSED;
       break;
-    
+    case DI_3WAY_2:    // 
+      pinMode(i, INPUT_PULLUP);
+      pinMode(i+1, OUTPUT);
+      digitalWrite(i+1,LOW);
+      
+      pinMode(pinsExtra[i], INPUT_PULLUP);
+      pinMode(pinsExtra[i]+1, OUTPUT);
+      digitalWrite(pinsExtra[i]+1,LOW);
+      configArray[i+1] = NOTUSED;
+      configArray[pinsExtra[i]+1] = NOTUSED;
+      
+      break;
     }
   }
 }

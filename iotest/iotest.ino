@@ -4,8 +4,8 @@
 
 
 // Uncomment the master or slave define, never both!
-#define MASTER
-//#define SLAVE
+//#define MASTER
+#define SLAVE
 
 #define MASTER_ID 1 // Change if you have more than one master board in your system
 
@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 1
+#define FRAMERATE 2
 
 // ############
 // Plugins

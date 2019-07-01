@@ -131,7 +131,11 @@ PLUGIN_API int XPluginStart(
 						"Toggle debug",
 						(void *) 1,
 						1);
-
+	XPLMAppendMenuItem(
+						myMenu,
+						"Send config",
+						(void *) 4,
+						1);
 	/* Look up our data ref.  You find the string name of the data ref
 	 * in the master list of data refs, including in HTML form in the
 	 * plugin SDK.  In this case, we want the nav1 frequency. */
@@ -223,6 +227,10 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
   		XPLMSetDatai(gDataRef,0);
   	}
   }
+	if((int) inItemRef == 3) {
+
+		sendConfigToArduino(cport_nr);
+	}
 	/* This is our handler for the menu item.  Our inItemRef is the refcon
 	 * we registered in our XPLMAppendMenuItem calls.  It is either +1000 or
 	 * -1000 depending on which menu item is picked. */
@@ -236,52 +244,12 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
 
 }
 
-void parseInputPin(char* data) {
-  char* digital = strstr(data, "D"); // this also removes leading spaces
-  char* analog = strstr(data, "A");
 
-  char pinName[6];
 
-  if(digital != NULL) {
-    display("Found Digital %s", digital);
-    int var = 0;
-    sscanf(digital, "%4[^ ] %d", pinName, &var);
-
-    display("value %d , %s ", var, pinName);
-
-    setDigitalData(1, slaveId, pinName, var);
-  }
-  if(analog != NULL) {
-    //display("Found Analog %s", analog);
-    int var = 0;
-    sscanf(analog, "%4[^ ] %d", pinName, &var);
-
-    float ftemp = var * 1.0;
-    //display("value %d , %s float %f", var, pinName, ftemp);
-
-    setAnalogData(1, slaveId, pinName, var);
-
-  }
-}
 
 void parseToken(char* data) {
   // data is sepperated with comma
-  char seps[] = ",";
-  char* token;
-  int test = 1;
 
-  token = strtok(data, seps);
-
-  while (token != NULL)  {
-    //display("tokens %s %d", token, test);
-    char* tempString = malloc(300);
-    char* tmp = tempString;
-    strcpy(tempString, token);
-    parseInputPin(tempString);
-    free(tmp);
-    token = strtok(NULL, seps);
-    test++;
-  }
 }
 
 void parseMessage(char* data) {
@@ -294,20 +262,22 @@ void parseMessage(char* data) {
   //display("parseMessage data %s", data);
   sscanf (data, "{99;%d;%d;%4000[^;];", &masterId, &slaveId, inputString);
   //display("parseMessage master:%d slave:%d string: %s", masterId, slaveId, inputString);
-  parseToken(inputString);
-  /*token = strtok(data, seps);
-  if (token != NULL) {
-    //display("first token %s", token);
+  //parseToken(inputString);
+
+
+	seps[0] = ",";
+  token = strtok(inputString, seps);
+
+  while (token != NULL)  {
+    //display("tokens %s %d", token, test);
+    char* tempString = malloc(300);
+    char* tmp = tempString;
+    strcpy(tempString, token);
+    parseInputPin(tempString, masterId, slaveId); // in pins.c
+    free(tmp);
+    token = strtok(NULL, seps);
+    test++;
   }
-  token = strtok(NULL, seps);
-  if (token != NULL) {
-    //display("second token %s", token);
-    sscanf (token, "%d", &slaveId);
-  }
-  token = strtok(NULL, seps);
-  if (token != NULL) {
-    parseToken(token);
-  }*/
 
 }
 

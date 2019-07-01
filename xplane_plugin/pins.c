@@ -1,6 +1,7 @@
 #include "openSimIO.h"
 #include <stdio.h>
 #include <string.h>
+#include "iotypes.h"
 
 typedef struct  {
 
@@ -19,6 +20,7 @@ typedef struct  {
 	int output;
 	int prevValue;
 	float prevValueF;
+	int extraInfo;
 
 } pin_struct;
 
@@ -41,7 +43,7 @@ pin_struct* lineToStruct( char* line) {
   char ioTypeString[32];
   char dataRefString[512];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;", &newPin->master,
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;%f;", &newPin->master,
                                                                                          &newPin->slave,
                                                                                          &newPin->pinNameString,
                                                                                          &newPin->ioMode,
@@ -51,9 +53,10 @@ pin_struct* lineToStruct( char* line) {
                                                                                          &newPin->pinMax,
                                                                                          dataRefString,
                                                                                          &newPin->xplaneMin,
-                                                                                         &newPin->xplaneMax );
+                                                                                         &newPin->xplaneMax,
+																																											   &newPin->extraInfo  );
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
-  if(conversionCount != 11) {
+  if(conversionCount != 12) {
       display("Error! converting config line %s", line);
       return NULL;
   } else {
@@ -152,45 +155,14 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
 
   return out;
 }
-void setAnalogData(int master, int slave, char* pinName, int value) {
-  display("setAnalogData %s %d", pinName, value);
-  for ( int i=0; i<nrOfPins;i++) {
+void setAnalogData(int i, int value) {
 
-    if (strcmp(pinName, pins[i].pinNameString) == 0) {
-      display("found pinname %s", pinName);
 
       int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
       if (type == xplmType_Int) {
         int setValue = (int) value;
 
-        XPLMSetDatai(pins[i].dataRef,setValue);
-      } else if (type == xplmType_Float) {
-        float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        display("setAnalogData setting float %s %f", pinName, setValue);
-        XPLMSetDataf(pins[i].dataRef,setValue);
-      } else if (type == xplmType_Double) {
-        double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        //display("setAnalogData setting double %s %f", pinName, setValue);
-        XPLMSetDatad(pins[i].dataRef,setValue);
-      }
-    }
-  }
-
-}
-
-void setDigitalData(int master, int slave, char* pinName, int value) {
-  display("setDigitalData %s %d", pinName, value);
-  for ( int i=0; i<nrOfPins;i++) {
-
-    if (strcmp(pinName, pins[i].pinNameString) == 0) {
-      display("found pinname %s", pinName);
-
-      int type = XPLMGetDataRefTypes(pins[i].dataRef);
-
-      if (type == xplmType_Int) {
-        int setValue = (int) value;
-        display("setDigitalData setting int %s %d", pinName, setValue);
         XPLMSetDatai(pins[i].dataRef,setValue);
       } else if (type == xplmType_Float) {
         float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
@@ -201,8 +173,29 @@ void setDigitalData(int master, int slave, char* pinName, int value) {
         //display("setAnalogData setting double %s %f", pinName, setValue);
         XPLMSetDatad(pins[i].dataRef,setValue);
       }
-    }
-  }
+
+}
+
+
+void setDigitalData(int i, int value) {
+
+
+	int type = XPLMGetDataRefTypes(pins[i].dataRef);
+
+	if (type == xplmType_Int) {
+	  int setValue = (int) value;
+	  display("setDigitalData setting int %s %d", i, setValue);
+	  XPLMSetDatai(pins[i].dataRef,setValue);
+	} else if (type == xplmType_Float) {
+	  float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+	  //display("setAnalogData setting float %s %f", pinName, setValue);
+	  XPLMSetDataf(pins[i].dataRef,setValue);
+	} else if (type == xplmType_Double) {
+	  double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+	  //display("setAnalogData setting double %s %f", pinName, setValue);
+	  XPLMSetDatad(pins[i].dataRef,setValue);
+	}
+
 
 }
 
@@ -242,4 +235,69 @@ void sendDataToArduino(int cport_nr) {
       }
 		}
 	}
+}
+
+void parseInputPin(char* data, int masterId, int slaveId) {
+  char* digital = strstr(data, "D"); // this also removes leading spaces
+  char* analog = strstr(data, "A");
+
+  char pinName[6];
+	int var = 0;
+
+  if(digital != NULL) {
+    display("Found Digital %s", digital);
+
+    sscanf(digital, "%4[^ ] %d", pinName, &var);
+
+    display("value %d , %s ", var, pinName);
+
+    //setDigitalData(1, slaveId, pinName, var);
+  }
+  if(analog != NULL) {
+    //display("Found Analog %s", analog);
+
+    sscanf(analog, "%4[^ ] %d", pinName, &var);
+
+    float ftemp = var * 1.0;
+    //display("value %d , %s float %f", var, pinName, ftemp);
+
+    //setAnalogData(1, slaveId, pinName, var);
+
+  }
+
+	// find pin struct
+		for (int i=0;i<nrOfPins;i++) {
+			if (pins[i].master == masterId && pins[i].slave == slaveId) {
+				if (strcmp(pinName, pins[i].pinNameString) == 0) {
+					switch (pins[i].ioMode) {
+				    case 0:    // not configured
+
+				      break;
+						case DI_INPUT_PULLUP:    // not configured
+							setDigitalData(i, var);
+							break;
+						case DI_INPUT_FLOATING:    // not configured
+							setDigitalData(i, var);
+							break;
+						case AI_RAW:    // not configured
+							setAnalogData(i, var);
+							break;
+						case AI_FILTER:    // not configured
+							setAnalogData(i, var);
+							break;
+						case DI_ROTARY_ENCODER_TYPE1:    // not configured
+							setDigitalData(i, var);
+							break;
+						case DI_3WAY_2:    // not configured
+							setAnalogData(i, var);
+							break;
+						}
+					return;
+				}
+			}
+		}
+}
+
+void sendConfigToArduino(int cport_nr) {
+
 }
