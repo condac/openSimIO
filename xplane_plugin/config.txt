@@ -1,0 +1,15 @@
+# Hash tag is considered a comment, can only be in beginning of sentence
+# You must fill in all fields even if analog scales is not used by digital inputs etc...
+# masterId.slaveId.Pin;iomode;reverse;center;pinMin;pinMax;xplaneDataRef;xplaneMin;xplaneMax;
+# example string:
+# 1.0.D5;1;0;0;0;1;sim/cockpit/switches/pitot_heat_on;0;1;
+# 1.0.A0;4;0;500;100;900;sim/joystick/yoke_pitch_ratio;-1.0;1.0;
+1.0.D5;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;
+1.0.D6;1;0;0;0;0;sim/cockpit/electrical/beacon_lights_on;0;1;
+1.0.D7;1;0;0;0;0;sim/cockpit/electrical/nav_lights_on;0;1;
+
+
+1.0.A0;4;1;680;400;970;sim/joystick/yoke_roll_ratio;-1.0;1.0;
+1.0.A1;4;1;500;100;900;sim/joystick/yoke_pitch_ratio;-1.0;1.0;
+1.0.A2;4;0;500;100;900;sim/joystick/yoke_heading_ratio;-1.0;1.0;
+
