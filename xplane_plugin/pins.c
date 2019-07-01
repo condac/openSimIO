@@ -141,11 +141,11 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
   return out;
 }
 void setAnalogData(int master, int slave, char* pinName, int value) {
-  display("setAnalogData %s %d", pinName, value);
+  //display("setAnalogData %s %d", pinName, value);
   for ( int i=0; i<nrOfPins;i++) {
 
     if (strcmp(pinName, pins[i].pinNameString) == 0) {
-      display("found pinname %s", pinName);
+      //display("found pinname %s", pinName);
 
       int type = XPLMGetDataRefTypes(pins[i].dataRef);
 

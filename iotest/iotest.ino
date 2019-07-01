@@ -3,11 +3,11 @@
 // ############
 
 
-// Uncomment the master or slave define 
+// Uncomment the master or slave define, never both!
 #define MASTER
 //#define SLAVE
 
-#define MASTER_ID 1 // Change if you have more than one master board in your system
+#define MASTER_ID 13 // Change if you have more than one master board in your system
 
 #define PC_ID 99 // do not touch
 
@@ -37,7 +37,7 @@
 
 
 String type = BOARD;
-#define TIME_DEBUG 
+//#define TIME_DEBUG 
 
 
 #include <avr/wdt.h> // Watchdog interupt // 20 bytes for setup and 2 bytes for each reset, no memory
@@ -54,10 +54,6 @@ bool pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #endif
 
 #include "pinHandle.h"
-
-
-
-
 
 
 
@@ -201,8 +197,10 @@ void checkAnalogPinChanged( int pin) {
 
 void sendData() {
   dataSerial.print("{99;");
-  //dataSerial.print(MASTER_ID);
-  //dataSerial.print(";");
+  #ifdef MASTER
+  dataSerial.print(MASTER_ID);
+  dataSerial.print(";");
+  #endif
   dataSerial.print(myId);
   dataSerial.print(";");
   for (int i = 0; i<DIGITAL_PIN_COUNT; i++) {
@@ -212,7 +210,7 @@ void sendData() {
       dataSerial.print(i);
       dataSerial.print(" ");
       dataSerial.print(pinsData[i]);
-      dataSerial.print(", ");
+      dataSerial.print(",");
     }
   }
   for (int i = DIGITAL_PIN_COUNT; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i++) {
@@ -222,7 +220,7 @@ void sendData() {
       dataSerial.print(i-DIGITAL_PIN_COUNT);
       dataSerial.print(" ");
       dataSerial.print(pinsData[i]);
-      dataSerial.print(", ");
+      dataSerial.print(",");
     }
   }
   dataSerial.print(";");
@@ -392,7 +390,7 @@ void relayToPC() {
   
   pcSerial.print("{99;");
   pcSerial.print(MASTER_ID); // add master id
-  pcSerial.print(";"); 
+  pcSerial.print(""); 
   while (chainSerial.available() <= 0) {}
   data = chainSerial.read();
   while (data != '}') {

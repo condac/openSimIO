@@ -86,13 +86,13 @@ PLUGIN_API int XPluginStart(
 	params.right = params.left + 200;
 	params.top = params.bottom + 200;
 
-	g_window = XPLMCreateWindowEx(&params);
+	//g_window = XPLMCreateWindowEx(&params);
 
 	// Position the window as a "free" floating window, which the user can drag around
-	XPLMSetWindowPositioningMode(g_window, xplm_WindowPositionFree, -1);
+	//XPLMSetWindowPositioningMode(g_window, xplm_WindowPositionFree, -1);
 	// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
-	XPLMSetWindowResizingLimits(g_window, 200, 200, 300, 300);
-	XPLMSetWindowTitle(g_window, "openSimIO");
+	//XPLMSetWindowResizingLimits(g_window, 200, 200, 300, 300);
+	//XPLMSetWindowTitle(g_window, "openSimIO");
 
   // Menu
   XPLMMenuID	myMenu;
@@ -252,12 +252,12 @@ void parseInputPin(char* data) {
     setDigitalData(1, slaveId, pinName, var);
   }
   if(analog != NULL) {
-    display("Found Analog %s", analog);
+    //display("Found Analog %s", analog);
     int var = 0;
     sscanf(analog, "%4[^ ] %d", pinName, &var);
 
     float ftemp = var * 1.0;
-    display("value %d , %s float %f", var, pinName, ftemp);
+    //display("value %d , %s float %f", var, pinName, ftemp);
 
     setAnalogData(1, slaveId, pinName, var);
 
@@ -273,7 +273,7 @@ void parseToken(char* data) {
   token = strtok(data, seps);
 
   while (token != NULL)  {
-    display("tokens %s %d", token, test);
+    //display("tokens %s %d", token, test);
     char* tempString = malloc(300);
     char* tmp = tempString;
     strcpy(tempString, token);
@@ -291,9 +291,9 @@ void parseMessage(char* data) {
   int test = 1;
   int masterId;
   char inputString[4000];
-  display("parseMessage data %s", data);
+  //display("parseMessage data %s", data);
   sscanf (data, "{%d;%d;%4000[^;];", &masterId, &slaveId, inputString);
-  display("parseMessage master:%d slave:%d string: %s", masterId, slaveId, inputString);
+  //display("parseMessage master:%d slave:%d string: %s", masterId, slaveId, inputString);
   parseToken(inputString);
   /*token = strtok(data, seps);
   if (token != NULL) {
