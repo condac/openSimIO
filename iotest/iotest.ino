@@ -448,24 +448,36 @@ int readPinNr(HardwareSerial& inSerial, char sep) {
 void handleSetPinMessage(HardwareSerial& inSerial) {
   pcSerial.print("handleSetPinMessage: ");
   char data;
-  
-  while (data != '}') {
-    pcSerial.print(data);
-    while (inSerial.available() <= 0) {
-      
+  waitForData(2);
+  data = inSerial.read(); // read ; char
+  while( data == ';') {
+    int pinNr = readPinNr(inSerial, '=');
+    if (pinNr == -1) {
+      break;
     }
-    data = inSerial.read();
+    int value = inSerial.parseInt();
     
+//        pcSerial.print("found pinnr: ");
+//        pcSerial.print(pinNr);
+//        pcSerial.print("mode: ");
+//        pcSerial.print(pinmode);
+//        pcSerial.print("extra: ");
+//        pcSerial.println(pinExtra);
+    setValue(pinNr, value);
+    waitForData(2);
+    data = inSerial.read();
+//    pcSerial.println(data);
   }
-  // end of message
-  pcSerial.println(data);
+  
+  setupAllPins();
+//  pcSerial.println("end handleConfig");
 }
 
 void handleConfigMessage(HardwareSerial& inSerial) {
   // parse the message {13;0;2;D3,1,0;A2,4,3;}
   // from this position       ^_____________
   
-  pcSerial.print("handleConfigMessage: ");
+//  pcSerial.print("handleConfigMessage: ");
   char data;
   waitForData(2);
   data = inSerial.read(); // read ; char
@@ -478,20 +490,20 @@ void handleConfigMessage(HardwareSerial& inSerial) {
     waitForData(1);
     data = inSerial.read();
     int pinExtra = inSerial.parseInt();
-    pcSerial.print("found pinnr: ");
-    pcSerial.print(pinNr);
-    pcSerial.print("mode: ");
-    pcSerial.print(pinmode);
-    pcSerial.print("extra: ");
-    pcSerial.println(pinExtra);
+//        pcSerial.print("found pinnr: ");
+//        pcSerial.print(pinNr);
+//        pcSerial.print("mode: ");
+//        pcSerial.print(pinmode);
+//        pcSerial.print("extra: ");
+//        pcSerial.println(pinExtra);
     setConfig(pinNr, pinmode, pinExtra);
     waitForData(2);
     data = inSerial.read();
-    pcSerial.println(data);
+//    pcSerial.println(data);
   }
   
   setupAllPins();
-  pcSerial.println("end handleConfig");
+//  pcSerial.println("end handleConfig");
 }
 
 void setConfig(int nr, int mode, int extra) {

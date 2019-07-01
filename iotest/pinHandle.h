@@ -113,3 +113,17 @@ void setupAllPins() {
 void setupDigitalPins() {
   setupPins(pinsConfig, DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT);
 }
+
+
+void setValue(int pin, int val) {
+  switch (pinsConfig[pin]) {
+    case 0:    // not configured
+      // do nothing
+      break;
+    case DO_OUTPUT:    // 
+      digitalWrite(pin,val);
+      break;
+    
+    }
+  
+}
