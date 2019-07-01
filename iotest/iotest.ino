@@ -282,10 +282,16 @@ void parseSerial() {
 
 }
 
-void waitForData(int nr) {
-  while (chainSerial.available() < nr) {
+void waitForData(HardwareSerial& inSerial, int nr) {
+  int counter = 0;
+  while (inSerial.available() < nr) {
     // nop
     asm("nop;");
+    counter++;
+    if (counter > 1000) {
+      pcSerial.println("waiting...");
+      counter = 0;
+    }
   }
 }
 #ifdef MASTER
@@ -294,11 +300,11 @@ void parsePCSerial() {
   // if not send it to next device in chain
   while (pcSerial.available() > 0) {
     if (pcSerial.read() == '{') {
-      waitForData(3);
+      waitForData(pcSerial, 3);
       int masterid = pcSerial.parseInt();
-      waitForData(3);
+      waitForData(pcSerial, 3);
       char data = pcSerial.read(); // read the ; character
-      waitForData(3);
+      waitForData(pcSerial, 3);
       int slaveid = pcSerial.parseInt();
 
       pcSerial.print("got master");
@@ -391,9 +397,9 @@ void doSomething(HardwareSerial& inSerial) {
   char data;
   
   pcSerial.print("message for me: ");
-  waitForData(1);
+  waitForData(inSerial, 1);
   data = inSerial.read(); // read the ; char
-  waitForData(3);
+  waitForData(inSerial, 3);
   int messageType = inSerial.parseInt();
   if (messageType == 0) {
     // set pin message
@@ -413,16 +419,16 @@ int readPinNr(HardwareSerial& inSerial, char sep) {
   char da[5];
   int counter = 0;
   char data;
-  waitForData(1);
+  waitForData(inSerial, 1);
   data = inSerial.read();
   if (data == '}') {
     return -1;
   }
-  while (data != ',') {
+  while (data != sep) {
     // read data until we find ','
     da[counter] = data;
     counter++;
-    waitForData(1);
+    waitForData(inSerial, 1);
     data = inSerial.read();
     if (counter == 4) {
       break;
@@ -446,9 +452,9 @@ int readPinNr(HardwareSerial& inSerial, char sep) {
   return pinNr;
 }
 void handleSetPinMessage(HardwareSerial& inSerial) {
-  pcSerial.print("handleSetPinMessage: ");
+//  pcSerial.print("handleSetPinMessage: ");
   char data;
-  waitForData(2);
+  waitForData(inSerial, 2);
   data = inSerial.read(); // read ; char
   while( data == ';') {
     int pinNr = readPinNr(inSerial, '=');
@@ -459,18 +465,15 @@ void handleSetPinMessage(HardwareSerial& inSerial) {
     
 //        pcSerial.print("found pinnr: ");
 //        pcSerial.print(pinNr);
-//        pcSerial.print("mode: ");
-//        pcSerial.print(pinmode);
-//        pcSerial.print("extra: ");
-//        pcSerial.println(pinExtra);
+//        pcSerial.print("value: ");
+//        pcSerial.println(value);
     setValue(pinNr, value);
-    waitForData(2);
+    waitForData(inSerial, 1);
     data = inSerial.read();
 //    pcSerial.println(data);
   }
   
-  setupAllPins();
-//  pcSerial.println("end handleConfig");
+//  pcSerial.println("end handleSet");
 }
 
 void handleConfigMessage(HardwareSerial& inSerial) {
@@ -479,7 +482,7 @@ void handleConfigMessage(HardwareSerial& inSerial) {
   
 //  pcSerial.print("handleConfigMessage: ");
   char data;
-  waitForData(2);
+  waitForData(inSerial, 2);
   data = inSerial.read(); // read ; char
   while( data == ';') {
     int pinNr = readPinNr(inSerial, ',');
@@ -487,7 +490,7 @@ void handleConfigMessage(HardwareSerial& inSerial) {
       break;
     }
     int pinmode = inSerial.parseInt();
-    waitForData(1);
+    waitForData(inSerial, 1);
     data = inSerial.read();
     int pinExtra = inSerial.parseInt();
 //        pcSerial.print("found pinnr: ");
@@ -497,7 +500,7 @@ void handleConfigMessage(HardwareSerial& inSerial) {
 //        pcSerial.print("extra: ");
 //        pcSerial.println(pinExtra);
     setConfig(pinNr, pinmode, pinExtra);
-    waitForData(2);
+    waitForData(inSerial, 2);
     data = inSerial.read();
 //    pcSerial.println(data);
   }
