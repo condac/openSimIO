@@ -184,7 +184,9 @@ void loop() {
 
 void ping() {
   #ifdef MASTER
-  chainSerial.println("{100;}");
+  chainSerial.print("{100;}");
+  chainSerial.print(MASTER_ID);
+  chainSerial.println(";}");
   #endif
 }
 /*
@@ -199,6 +201,8 @@ void checkAnalogPinChanged( int pin) {
 
 void sendData() {
   dataSerial.print("{99;");
+  //dataSerial.print(MASTER_ID);
+  //dataSerial.print(";");
   dataSerial.print(myId);
   dataSerial.print(";");
   for (int i = 0; i<DIGITAL_PIN_COUNT; i++) {
@@ -282,25 +286,37 @@ void parsePCSerial() {
   // if not send it to next device in chain
   while (pcSerial.available() > 0) {
     if (pcSerial.read() == '{') {
-      int id = pcSerial.parseInt();
-      if ( id == 0 ) {
-        // data is for me
-        doSomething();
-        return;
-      } 
       
+      int masterid = pcSerial.parseInt();
+      char data = pcSerial.read(); // read the ; character
+      int slaveid = pcSerial.parseInt();
       
-      else if ( id > 0 ) {
-        // relay data forward
-        relaySerialFromPC(id);
-        return;
-      } 
+      if (masterid == MASTER_ID) {
+        // data for me or my slaves
       
-      else  {
-        // id not found?
-        pcSerial.println("error else id");
+        if ( slaveid == 0 ) {
+          // data is for me
+          doSomething();
+          return;
+        } 
+        else if ( slaveid > 0 ) {
+          // relay data forward
+          relaySerialFromPC(slaveid);
+          return;
+        } 
+        else  {
+          // id not found?
+          pcSerial.println("error else id");
+          
+          return;
+        }
+      }
+      else if (masterid > 0) {
+        // relay to other masters???
         
-        return;
+      }
+      else {
+        // broadcast?
       }
     }
   }
@@ -374,7 +390,9 @@ void relayToPC() {
   // message to PC from slave
   char data;
   
-  pcSerial.print("{99");
+  pcSerial.print("{99;");
+  pcSerial.print(MASTER_ID); // add master id
+  pcSerial.print(";"); 
   while (chainSerial.available() <= 0) {}
   data = chainSerial.read();
   while (data != '}') {
