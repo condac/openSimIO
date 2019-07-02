@@ -250,6 +250,12 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
     out = out*-1.0;
   }
 
+  if (out>outMax) {
+    out = outMax;
+  }
+  if (out<outMin) {
+    out = outMin;
+  }
   return out;
 }
 void setAnalogData(int i, int value) {

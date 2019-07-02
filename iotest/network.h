@@ -81,7 +81,7 @@ void loopEthernet() {
 
 
 void sendDataEth() {
-  Serial.print("sendDataEth:");
+  //Serial.print("sendDataEth:");
   bool changes = false;
   for (int i = 0; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i++) {
     if (pin_changed[i]) {
@@ -90,20 +90,20 @@ void sendDataEth() {
     }
   }
   if (changes != true) {
-    Serial.print("sendDataEth: return");
+    //Serial.print("sendDataEth: return");
     return;
   }
   char strbuf[32];
 
-  remote = Udp.remoteIP();
-    for (int i=0; i < 4; i++) {
-      Serial.print(remote[i], DEC);
-      if (i < 3) {
-        Serial.print(".");
-      }
-    }
-    Serial.print(", port ");
-    Serial.println(Udp.remotePort());
+//  remote = Udp.remoteIP();
+//    for (int i=0; i < 4; i++) {
+//      Serial.print(remote[i], DEC);
+//      if (i < 3) {
+//        Serial.print(".");
+//      }
+//    }
+//    Serial.print(", port ");
+//    Serial.println(Udp.remotePort());
 
   Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
 

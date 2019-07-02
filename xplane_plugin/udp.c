@@ -218,16 +218,31 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
 	timeout.tv_usec = 1;
   #endif
 
-  if (setsockopt(sock.sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+  /*if (setsockopt(sock.sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
 		display("Error failed to set timeout");
-	}
+	}*/
+  setnonblocking(sock);
 
 
 	return sock;
 }
 
-int ifDataAvaible(udpSocket socket) {
+int dataAvaible(udpSocket sock) {
+  //return 1;
+  fd_set readfds;
+  fcntl(sock.sock, F_SETFL, O_NONBLOCK);
+  struct timeval tv;
 
+  FD_ZERO(&readfds);
+  FD_SET(sock.sock, &readfds);
+
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+
+  int res = select(sock.sock + 1, &readfds, NULL, NULL, &tv);
+
+
+  return res;
 }
 
 int sendUDP(udpSocket socket, char buffer[], int len) {
@@ -255,23 +270,67 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
 	return res;
 }
 
-int readUDP(udpSocket sock, char buffer[], int len) {
+int readUDP2(udpSocket sock, char buffer[], int len) {
+
   // create non blocking udp read
   int res = 0;
   //char buf[4098];
   struct sockaddr_in remote;
   int slen = sizeof(remote);
-
-  res = recvfrom(sock.sock, buffer, len, 0, (struct sockaddr*) &remote, &slen);
-  if (res>0) {
-    buffer[res] = '\0';
-    //display("Received %d from %s:%d %s\n\n", res, inet_ntoa(remote.sin_addr), ntohs(remote.sin_port), buffer);
-    return res;
+  if (dataAvaible(sock) > 0) {
+    res = recvfrom(sock.sock, buffer, len, 0, (struct sockaddr*) &remote, &slen);
+    if (res>0) {
+      buffer[res] = '\0';
+      //display("Received %d from %s:%d %s\n\n", res, inet_ntoa(remote.sin_addr), ntohs(remote.sin_port), buffer);
+      return res;
+    }
+    else {
+      return -1;
+    }
   }
-  else {
-    return -1;
-  }
+}
 
 
+int readUDP(udpSocket sock, char buffer[], int len)
+{
+#ifdef _WIN32
+	// Windows readUDP needs the select command- minimum timeout is 1ms.
+	// Without this playback becomes choppy
 
+	// Definitions
+	FD_SET stReadFDS;
+	FD_SET stExceptFDS;
+
+	// Setup for Select
+	FD_ZERO(&stReadFDS);
+	FD_SET(sock.sock, &stReadFDS);
+	FD_ZERO(&stExceptFDS);
+	FD_SET(sock.sock, &stExceptFDS);
+
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 100000;
+
+	// Select Command
+	int status = select(-1, &stReadFDS, (FD_SET*)0, &stExceptFDS, &tv);
+	if (status < 0)
+	{
+		display("Select command error");
+		return -1;
+	}
+	if (status == 0)
+	{
+		// No data
+		return 0;
+	}
+	status = recv(sock.sock, buffer, len, 0);
+#else
+	// For apple or linux-just read - will timeout in 0.5 ms
+	int status = (int)recv(sock.sock, buffer, len, 0);
+#endif
+	if (status < 0)
+	{
+		display("Error reading socket");
+	}
+	return status;
 }

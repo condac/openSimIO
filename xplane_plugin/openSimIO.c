@@ -408,20 +408,6 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
     }
   }
 
-  while (res>0) {
-
-    res = readUDP(asock, buf, len);
-    if (res>0) {
-      buf[res] = '\0';
-      if (ifCharInArray(buf, '}') == -1) {
-        // ONly half of message recieved or garbage
-        //display("received %i bytes: %s\n", n, (char *)buf);
-      } else {
-        parseSerialInput(buf, res);
-      }
-    }
-  }
-
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);
 

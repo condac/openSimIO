@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 30
+#define FRAMERATE 60
 
 // ############
 // Plugins
