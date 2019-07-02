@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -61,7 +62,7 @@
 #include <setupapi.h>
 #include <hidsdi.h>
 #include <dbt.h>
-#include "thread.h"
+//#include "thread.h"
 #endif
 
 /*

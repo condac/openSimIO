@@ -1,5 +1,5 @@
 #include "openSimIO.h"
-
+#include "udp.h"
 // Downloaded from https://developer.x-plane.com/code-sample/hello-world-sdk-3/
 
 
@@ -12,7 +12,7 @@
 #if LIN
 	#include <GL/gl.h> // apt install mesa-common-dev
 #elif __GNUC__
-	#include <OpenGL/gl.h>
+	//#include <OpenGL/gl.h> 
 #else
 	#include <GL/gl.h>
 #endif
@@ -42,7 +42,7 @@ int bdrate=115200;       /* 9600 baud */
 
 int slaveId = 0;
 
-
+udpSocket asock;
 
 
 PLUGIN_API int XPluginStart(
@@ -158,6 +158,7 @@ PLUGIN_API int XPluginStart(
     //return(0);
   }
 
+	asock = createUDPSocket("192.168.0.105", 34555);
   /* Register our callback for once a second.  Positive intervals
 	 * are in seconds, negative are the negative of sim frames.  Zero
 	 * registers but does not schedule a callback for time. */
@@ -349,8 +350,14 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
     //display("received %i bytes: %s\n", n, (char *)buf);
   }
 	sendDataToArduino(cport_nr);
-
-
+	char test[] = "hejhej";
+	sendUDP(asock, test, sizeof(test));
+	int len = 32;
+	char buf2[len];
+	int res = readUDP(asock, buf2, len);
+	if (res>0) {
+		display("UDP %s", buf2);
+	}
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);
 
