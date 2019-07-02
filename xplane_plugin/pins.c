@@ -43,7 +43,7 @@ pin_struct* lineToStruct( char* line) {
   char ioTypeString[32];
   char dataRefString[512];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;%f;", &newPin->master,
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;%d;", &newPin->master,
                                                                                          &newPin->slave,
                                                                                          &newPin->pinNameString,
                                                                                          &newPin->ioMode,
@@ -137,7 +137,7 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
     value = min;
   }
 
-  if (value>center) {
+  if (value>=center) {
     value = value - center;
     float scale = outMax / (max-center) ;
     out = value * scale;
@@ -166,7 +166,7 @@ void setAnalogData(int i, int value) {
         XPLMSetDatai(pins[i].dataRef,setValue);
       } else if (type == xplmType_Float) {
         float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        //display("setAnalogData setting float %s %f", pinName, setValue);
+        display("setAnalogData setting float %s %f %d ", pins[i].pinNameString, setValue, value);
         XPLMSetDataf(pins[i].dataRef,setValue);
       } else if (type == xplmType_Double) {
         double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
@@ -297,7 +297,21 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 			}
 		}
 }
+int sendcount = 0;
 
+void sendConfigToArduinoReset() {
+  sendcount = 0;
+}
 void sendConfigToArduino(int cport_nr) {
-
+  char out[512];
+  int count = 0;
+  // send digital data to arduino
+  if (sendcount<nrOfPins) {
+    int i = sendcount;
+    sendcount++;
+    //{1;2;0;D3,1,0;A2,5,3;}
+    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
+    display("write serial:%s", out);
+    RS232_SendBuf(cport_nr, out, len+1);
+  }
 }

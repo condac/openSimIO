@@ -38,19 +38,27 @@ void readAnalogPinFilter( int pin) {
 }
 
 void read3way_2( int pin, int extra) {
+  int newValue = 0;
+
   // this function is very special for our simulator because of the way it is wired. 
   bool currentState = digitalRead(pin);
   bool currentState2 = digitalRead(extra);
-
+//  pcSerial.print(currentState);
+//  pcSerial.print(currentState2);
+//  pcSerial.println("3way");
   if (currentState && currentState2) {
-    pinsData[pin] = 0;
+    newValue = 0;
   } else if (!currentState && currentState2) {
-    pinsData[pin] = 10;
+    newValue = 10;
   } else if (currentState && !currentState2) {
-    pinsData[pin] = 30;
+    newValue = 30;
   } else {
     // this should not happen, but it might during transition so we set the middle value
-    pinsData[pin] = 20;
+    newValue = 20;
+  }
+  if (pinsData[pin] != newValue) {
+    pinsData[pin] = newValue;
+    pin_changed[pin] = true;
   }
   
 }
