@@ -4,7 +4,7 @@ typedef struct UDPSocket{
 #else
 	int sock;
 #endif
-  char ip[17];
+  char ip[18];
 	unsigned short port;
 
 } udpSocket;

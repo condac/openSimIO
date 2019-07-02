@@ -12,7 +12,7 @@
 #if LIN
 	#include <GL/gl.h> // apt install mesa-common-dev
 #elif __GNUC__
-	//#include <OpenGL/gl.h> 
+	//#include <OpenGL/gl.h>
 #else
 	#include <GL/gl.h>
 #endif
@@ -32,6 +32,7 @@ int					dummy_wheel_handler(XPLMWindowID in_window_id, int x, int y, int wheel, 
 void				dummy_key_handler(XPLMWindowID in_window_id, char key, XPLMKeyFlags flags, char virtual_key, void * in_refcon, int losing_focus) { }
 
 static float	MyFlightLoopCallback(float inElapsedSinceLastCall,float inElapsedTimeSinceLastFlightLoop, int inCounter, void* inRefcon);
+int readEthernetConfig( char* ip, int* port);
 
 static XPLMDataRef		gDataRef = NULL;
 static XPLMDataRef		testDataRef = NULL;
@@ -44,6 +45,9 @@ int slaveId = 0;
 
 udpSocket asock;
 
+void reloadConfig() {
+  readConfig();
+}
 
 PLUGIN_API int XPluginStart(
 							char *		outName,
@@ -146,9 +150,10 @@ PLUGIN_API int XPluginStart(
   TeensyControls_display_init();
   display("started openSimIO");
 
+  XPLMDebugString("read config");
 
   readConfig();
-
+  XPLMDebugString("read config done");
   char mode[]={'8','N','1',0};
 
 
@@ -157,8 +162,16 @@ PLUGIN_API int XPluginStart(
 
     //return(0);
   }
-
-	asock = createUDPSocket("192.168.0.105", 34555);
+  XPLMDebugString("ethernet");
+  char ip[18];
+	int port;
+  if (readEthernetConfig(ip, &port) == 1) {
+    XPLMDebugString("ethernet 1");
+    display("creating socket %s %d", ip, port);
+    asock = createUDPSocket(ip, port);
+  }
+  XPLMDebugString("ethernet done");
+	//asock = createUDPSocket("192.168.0.105", 34555);
   /* Register our callback for once a second.  Positive intervals
 	 * are in seconds, negative are the negative of sim frames.  Zero
 	 * registers but does not schedule a callback for time. */
@@ -266,18 +279,27 @@ void parseMessage(char* data) {
   //parseToken(inputString);
 
 
+  char x;
+  int pos = 0;
 	seps[0] = ",";
-  token = strtok(inputString, seps);
 
-  while (token != NULL)  {
-    //display("tokens %s %d", token, test);
+  x = inputString[pos];
+  while (x != '\0')  {
+
     char* tempString = malloc(300);
     char* tmp = tempString;
-    strcpy(tempString, token);
+    strcpy(tempString, inputString+pos);
+    for (int i=0;i<10;i++) {
+      if (tempString[i] == ',') {
+        pos = pos + i;
+        tempString[i] = '\0';
+        //display("parseMessage found substring: %s",tempString);
+      }
+    }
     parseInputPin(tempString, masterId, slaveId); // in pins.c
     free(tmp);
-    token = strtok(NULL, seps);
-    test++;
+    pos++;
+    x = inputString[pos];
   }
 
 }
@@ -300,6 +322,7 @@ int getSlaveId(char* data) {
 
 void parseSerialInput( char* data, int len) {
 
+  //display("parseSerialInput %s %d",data,  len);
   char seps[] = "{}\n";
   char* token;
   int test = 1;
@@ -310,7 +333,7 @@ void parseSerialInput( char* data, int len) {
   while (token != NULL)  {
     token = strstr(token, "99;");
     if(token != NULL) {
-      display("data for me %s", data);
+      //display("data for me %s", data);
 
       //strncpy(slask, data, len);
       //slaveId = getSlaveId(slask);
@@ -322,6 +345,24 @@ void parseSerialInput( char* data, int len) {
     test++;
   }
 }
+
+
+int ifCharInArray(char* str, char val) {
+  char x;
+  int pos = 0;
+  x = str[pos];
+  while (x != '\0')  {
+    if (str[pos] == val) {
+      return pos;
+    }
+    pos++;
+    x = str[pos];
+  }
+  return -1;
+}
+
+char inputbuf[8200];
+
 
 
 float	MyFlightLoopCallback( float inElapsedSinceLastCall,
@@ -338,36 +379,84 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
   n = RS232_PollComport(cport_nr, buf, 4095);
 
   if(n > 0)    {
+
     buf[n] = '\0';   /* always put a "null" at the end of a string! */
+    if (ifCharInArray(buf, '}') == -1) {
+      // ONly half of message recieved or garbage
+      //display("received %i bytes: %s\n", n, (char *)buf);
+    }
     parseSerialInput(buf, n);
-    /*for(i=0; i < n; i++)      {
-      if(buf[i] < 32) { // replace unreadable control-codes by dots
 
-        buf[i] = '.';
-      }
-    }*/
-
-    //display("received %i bytes: %s\n", n, (char *)buf);
   }
-	sendDataToArduino(cport_nr);
+	//sendDataToArduino(cport_nr);
+  sendDataToUDP(asock);
+  //sendConfigToArduino(cport_nr);
 
 
-  sendConfigToArduino(cport_nr);
 
 
-
-	char test[] = "hejhej";
-	sendUDP(asock, test, sizeof(test));
 	int len = 32;
-	char buf2[len];
-	int res = readUDP(asock, buf2, len);
-	if (res>0) {
-		display("UDP %s", buf2);
-	}
+	//char buf2[len];
+	int res = readUDP(asock, buf, 4095);
+  if (res>0) {
+    buf[res] = '\0';
+    if (ifCharInArray(buf, '}') == -1) {
+      // ONly half of message recieved or garbage
+      //display("received %i bytes: %s\n", n, (char *)buf);
+    } else {
+      parseSerialInput(buf, res);
+    }
+  }
+
+  while (res>0) {
+
+    res = readUDP(asock, buf, len);
+    if (res>0) {
+      buf[res] = '\0';
+      if (ifCharInArray(buf, '}') == -1) {
+        // ONly half of message recieved or garbage
+        //display("received %i bytes: %s\n", n, (char *)buf);
+      } else {
+        parseSerialInput(buf, res);
+      }
+    }
+  }
 
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);
 
 	/* Return 1.0 to indicate that we want to be called again in 1 second. */
-	return 0.02;
+	return 0.01;
+}
+
+
+int readEthernetConfig( char* ip, int* port) {
+  FILE *configFile;
+  if ((configFile = fopen("Resources/plugins/openSimIO/config.txt","r")) == NULL){
+    XPLMDebugString("Error! opening configfile\n");
+     display("Error! opening configfile");
+  } else {
+
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    XPLMDebugString("opening configfile\n");
+    while ((read = getline(&line, &len, configFile)) != -1) {
+      if (line[0] == '/') {
+        XPLMDebugString("Found ip in config");
+        display("Found ip in config");
+        int res = sscanf(line, "/%s %d/", ip, port);
+        if (res == 2) {
+          XPLMDebugString("ethernet ok");
+          return 1;
+        }else {
+          XPLMDebugString("ethernet error2");
+        }
+
+
+      }
+    }
+    fclose(configFile);
+  }
+  return -1;
 }

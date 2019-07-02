@@ -9,7 +9,7 @@ int pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; // this array keeps the conf
 void checkPinChanged( int pin) {
   bool currentState = digitalRead(pin);
   if (currentState != pinsData[pin]) {
-    pin_changed[pin] = true;
+    pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
     
@@ -19,7 +19,7 @@ void readAnalogPinRaw( int pin) {
   
   int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
   if (currentState != pinsData[pin]) {
-    pin_changed[pin] = true;
+    pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
 }
@@ -32,7 +32,7 @@ void readAnalogPinFilter( int pin) {
   currentState = (pinsData[pin]*(filter+1) + currentState)/(filter+2);
   
   if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
-    pin_changed[pin] = true;
+    pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
 }
@@ -49,16 +49,16 @@ void read3way_2( int pin, int extra) {
   if (currentState && currentState2) {
     newValue = 0;
   } else if (!currentState && currentState2) {
-    newValue = 10;
+    newValue = 22;
   } else if (currentState && !currentState2) {
-    newValue = 30;
+    newValue = 45;
   } else {
     // this should not happen, but it might during transition so we set the middle value
-    newValue = 20;
+    newValue = 30;
   }
   if (pinsData[pin] != newValue) {
     pinsData[pin] = newValue;
-    pin_changed[pin] = true;
+    pin_changed[pin] = CHANGE_COUNT;
   }
   
 }
@@ -137,14 +137,14 @@ void setupPins(int configArray[], int numberOfPins) {
       break;
     case DI_3WAY_2:    // 
       pinMode(i, INPUT_PULLUP);
-      pinMode(i+1, OUTPUT);
-      digitalWrite(i+1,LOW);
+//      pinMode(i+1, OUTPUT);
+//      digitalWrite(i+1,LOW);
       
       pinMode(pinsExtra[i], INPUT_PULLUP);
-      pinMode(pinsExtra[i]+1, OUTPUT);
-      digitalWrite(pinsExtra[i]+1,LOW);
-      configArray[i+1] = NOTUSED;
-      configArray[pinsExtra[i]+1] = NOTUSED;
+//      pinMode(pinsExtra[i]+1, OUTPUT);
+//      digitalWrite(pinsExtra[i]+1,LOW);
+      
+      configArray[pinsExtra[i]] = NOTUSED;
       
       break;
     }

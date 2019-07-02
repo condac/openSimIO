@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "iotypes.h"
+#include "udp.h"
 
 typedef struct  {
 
@@ -10,6 +11,7 @@ typedef struct  {
   int slave;
   int ioMode;
   XPLMDataRef dataRef;
+  int dataRefIndex;
   float pinMin;
   float pinMax;
   float xplaneMin;
@@ -36,7 +38,7 @@ pin_struct* lineToStruct( char* line) {
 
   // convert config line to struct and return it as pointer
   pin_struct *newPin = malloc(sizeof (*newPin));
-  if(line[0] == '#') {
+  if((line[0] == '#') || (line[0] == '\r') || (line[0] == '\n') ) {
     return NULL;
   }
 
@@ -56,6 +58,32 @@ pin_struct* lineToStruct( char* line) {
                                                                                          &newPin->xplaneMin,
                                                                                          &newPin->xplaneMax,
 																																											   &newPin->extraInfo  );
+  // find index for dataRef
+  XPLMDebugString("lineToStruct\n");
+  int pos = 0;
+  for (int i = 0; i< 512;i++) {
+    if (dataRefString[i] == '[') {
+      //found index
+      pos = i;
+      break;
+    }
+  }
+  //int pos = strstr(dataRefString, "[");
+  XPLMDebugString("lineToStruct2\n");
+  if ( pos>0) {
+    int index = 0;
+    sscanf(dataRefString+pos, "[%d]", &index);
+    XPLMDebugString("lineToStruct3\n");
+    dataRefString[pos] = '\0';
+    XPLMDebugString("lineToStruct4\n");
+    display("index in dataref %s %d", dataRefString, index);
+    XPLMDebugString("lineToStruct5\n");
+    newPin->dataRefIndex = index;
+  }else {
+    XPLMDebugString("lineToStruct6\n");
+    newPin->dataRefIndex = 0;
+  }
+  XPLMDebugString("lineToStruct7 index");
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
   if(conversionCount != 12) {
       display("Error! converting config line %s", line);
@@ -151,6 +179,7 @@ pin_struct* lineToStruct( char* line) {
 
 
 void readConfig() {
+
   if ((configFile = fopen("Resources/plugins/openSimIO/config.txt","r")) == NULL){
        display("Error! opening configfile");
 
@@ -224,22 +253,29 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
   return out;
 }
 void setAnalogData(int i, int value) {
-
+  //display("setAnalogData ");
 
       int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
       if (type == xplmType_Int) {
-        int setValue = (int) value;
+        int setValue[1];
+        setValue[0] = (int) value;
 
-        XPLMSetDatai(pins[i].dataRef,setValue);
+        XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
       } else if (type == xplmType_Float) {
         float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        display("setAnalogData setting float %s %f %d ", pins[i].pinNameString, setValue, value);
+        //display("setAnalogData setting float %s %f %d %d ", pins[i].pinNameString, setValue, value, pins[i].dataRefIndex);
         XPLMSetDataf(pins[i].dataRef,setValue);
       } else if (type == xplmType_Double) {
-        double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        double setValue[1];
+        setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
         //display("setAnalogData setting double %s %f", pinName, setValue);
-        XPLMSetDatad(pins[i].dataRef,setValue);
+        XPLMSetDatad(pins[i].dataRef,setValue[0]);
+      } else if (type == xplmType_FloatArray) {
+        float setValue[1];
+        setValue[0] = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
+        XPLMSetDatavf(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
       }
 
 }
@@ -248,20 +284,40 @@ void setAnalogData(int i, int value) {
 void setDigitalData(int i, int value) {
 
 
+  //XPLMDebugString("setDigitalData\n");
+
 	int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
 	if (type == xplmType_Int) {
-	  int setValue = (int) value;
-	  display("setDigitalData setting int %s %d", i, setValue);
-	  XPLMSetDatai(pins[i].dataRef,setValue);
+
+    //XPLMDebugString("setDigitalData int %d\n");
+	  int setValue = value;
+	  //display("setDigitalData setting int %d %d", i, setValue);
+    if (pins[i].dataRef != NULL)	{
+      XPLMSetDatai(pins[i].dataRef,setValue);
+    }
 	} else if (type == xplmType_Float) {
+    //XPLMDebugString("setDigitalData float\n");
 	  float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
 	  //display("setAnalogData setting float %s %f", pinName, setValue);
 	  XPLMSetDataf(pins[i].dataRef,setValue);
 	} else if (type == xplmType_Double) {
-	  double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+	  double setValue[1];
+    setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
 	  //display("setAnalogData setting double %s %f", pinName, setValue);
-	  XPLMSetDatad(pins[i].dataRef,setValue);
+	  XPLMSetDatad(pins[i].dataRef,setValue[0]);
+	} else if (type == xplmType_FloatArray) {
+    //XPLMDebugString("setDigitalData float array\n");
+    float setValue[1];
+    setValue[0] = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+    //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
+    XPLMSetDatavf(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+  } else if (type == xplmType_IntArray) {
+    //XPLMDebugString("setDigitalData int array\n");
+	  int setValue[1];
+    setValue[0] = (int) value;
+	  //display("setDigitalData setting int %s %d", i, setValue[0]);
+	  XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
 	}
 
 
@@ -269,21 +325,22 @@ void setDigitalData(int i, int value) {
 
 void setDigitalPin(int cport_nr,int pin, int value ) {
 	char out[512];
-	int count = 0;
+
  // send digital data to arduino
 	if (pins[pin].output == 1) {
 		if (pins[pin].prevValue != value) {
 
 			int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
 			display("write serial:%s", out);
-			RS232_SendBuf(cport_nr, out, len+1);
+      RS232_SendBuf(cport_nr, out, len+1);
+
 			pins[pin].prevValue = value;
 		}
 	}
 }
 void sendDataToArduino(int cport_nr) {
-	char out[512];
-	int count = 0;
+
+
 
 	for (int i=0;i<nrOfPins;i++) {
 		if (pins[i].output == 1) {
@@ -293,50 +350,45 @@ void sendDataToArduino(int cport_nr) {
 
         setDigitalPin(cport_nr,i,XPLMGetDatai(pins[i].dataRef) );
       } else if (type == xplmType_Float) {
-        //float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        //display("setAnalogData setting float %s %f", pinName, setValue);
-        //XPLMSetDataf(pins[i].dataRef,setValue);
+
       } else if (type == xplmType_Double) {
-        //double setValue = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
-        //display("setAnalogData setting double %s %f", pinName, setValue);
-        //XPLMSetDatad(pins[i].dataRef,setValue);
+
       }
 		}
 	}
 }
 
 void parseInputPin(char* data, int masterId, int slaveId) {
+  //display("parse inputpin start  %s master %d slave %d", data, masterId, slaveId);
   char* digital = strstr(data, "D"); // this also removes leading spaces
   char* analog = strstr(data, "A");
 
   char pinName[6];
 	int var = 0;
+  int test = 0;
 
   if(digital != NULL) {
-    display("Found Digital %s", digital);
-
-    sscanf(digital, "%4[^ ] %d", pinName, &var);
-
-    display("value %d , %s ", var, pinName);
-
+    //display("Found Digital %s", digital);
+    test = sscanf(digital, "%4[^ ] %d", pinName, &var);
+    //display("value %d , %s ", var, pinName);
     //setDigitalData(1, slaveId, pinName, var);
   }
   if(analog != NULL) {
     //display("Found Analog %s", analog);
-
-    sscanf(analog, "%4[^ ] %d", pinName, &var);
-
-    float ftemp = var * 1.0;
+    test = sscanf(analog, "%4[^ ] %d", pinName, &var);
     //display("value %d , %s float %f", var, pinName, ftemp);
-
     //setAnalogData(1, slaveId, pinName, var);
 
   }
+  if (test == 2) {
+
 
 	// find pin struct
+  //display("parse inputpin %d %d %s %d ", masterId, slaveId, pinName, var);
 		for (int i=0;i<nrOfPins;i++) {
 			if (pins[i].master == masterId && pins[i].slave == slaveId) {
 				if (strcmp(pinName, pins[i].pinNameString) == 0) {
+          //display("parse inputpin found");
 					switch (pins[i].ioMode) {
 				    case 0:    // not configured
 
@@ -357,6 +409,7 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 							setDigitalData(i, var);
 							break;
 						case DI_3WAY_2:    // not configured
+              //XPLMDebugString("3way switch\n");
 							setAnalogData(i, var);
 							break;
 						}
@@ -364,7 +417,9 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 				}
 			}
 		}
+  }
 }
+
 int sendcount = 0;
 
 void sendConfigToArduinoReset() {
@@ -382,4 +437,37 @@ void sendConfigToArduino(int cport_nr) {
     display("write serial:%s", out);
     RS232_SendBuf(cport_nr, out, len+1);
   }
+}
+
+void setDigitalPinEth(udpSocket sock,int pin, int value ) {
+	char out[512];
+
+ // send digital data to arduino
+	if (pins[pin].output == 1) {
+		if (pins[pin].prevValue != value) {
+
+			int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+			display("write udp:%s", out);
+
+    	sendUDP(sock, out, sizeof(out));
+			pins[pin].prevValue = value;
+		}
+	}
+}
+void sendDataToUDP(udpSocket sock) {
+
+	for (int i=0;i<nrOfPins;i++) {
+		if (pins[i].output == 1) {
+			int type = XPLMGetDataRefTypes(pins[i].dataRef);
+
+      if (type == xplmType_Int) {
+
+        setDigitalPinEth(sock,i,XPLMGetDatai(pins[i].dataRef) );
+      } else if (type == xplmType_Float) {
+
+      } else if (type == xplmType_Double) {
+
+      }
+		}
+	}
 }

@@ -168,6 +168,19 @@ int inet_pton6(const char *src, char *dst)
     return 1;
 }
 
+int setnonblocking(udpSocket sock) {
+#if defined(WINDOWS) || defined(WINDOWS64)
+	unsigned long mode=1;
+	ioctlsocket(sock.sock, FIONBIO, &mode);
+	return 1;
+#else
+	int i;
+	i = fcntl(sock.sock, F_GETFL);
+	if (fcntl(sock.sock, F_SETFL, i | O_NONBLOCK) < 0) return 0;
+	return 1;
+#endif
+}
+
 udpSocket createUDPSocket(char* ipIn, int portIn) {
 
 	udpSocket sock;
@@ -202,16 +215,20 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
   #else
 	struct timeval timeout;
 	timeout.tv_sec = 0;
-	timeout.tv_usec = 250000;
+	timeout.tv_usec = 1;
   #endif
 
   if (setsockopt(sock.sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
 		display("Error failed to set timeout");
 	}
 
+
 	return sock;
 }
 
+int ifDataAvaible(udpSocket socket) {
+
+}
 
 int sendUDP(udpSocket socket, char buffer[], int len) {
 
@@ -241,5 +258,20 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
 int readUDP(udpSocket sock, char buffer[], int len) {
   // create non blocking udp read
   int res = 0;
-	return res;
+  //char buf[4098];
+  struct sockaddr_in remote;
+  int slen = sizeof(remote);
+
+  res = recvfrom(sock.sock, buffer, len, 0, (struct sockaddr*) &remote, &slen);
+  if (res>0) {
+    buffer[res] = '\0';
+    //display("Received %d from %s:%d %s\n\n", res, inet_ntoa(remote.sin_addr), ntohs(remote.sin_port), buffer);
+    return res;
+  }
+  else {
+    return -1;
+  }
+
+
+
 }

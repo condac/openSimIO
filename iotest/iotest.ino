@@ -4,8 +4,8 @@
 
 
 // Uncomment the master or slave define, never both!
-//#define MASTER
-#define SLAVE
+#define MASTER
+//#define SLAVE
 
 #define MASTER_ID 1 // Change if you have more than one master board in your system
 
@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 2
+#define FRAMERATE 30
 
 // ############
 // Plugins
@@ -46,7 +46,9 @@ String type = BOARD;
 
 int pinsData[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; 
 int pinsExtra[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; 
-bool pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
+
+#define CHANGE_COUNT 4 // This is how many times we repeat the signal that the pin have changed
+int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 
 #include "iotypes.h"
@@ -55,6 +57,7 @@ bool pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #include "rotaryEncoder.h"
 #endif
 
+int myId = 0; // this will automaticly be set by the chain ping loop
 #ifdef ETHERNET
 #include "network.h" // Uses 5064 bytes of program memory and 253 bytes of memory
 #endif
@@ -75,7 +78,7 @@ long chaintime;
 long debugtime;
 #endif
 
-int myId = 0; // this will automaticly be set by the chain ping loop
+
 
 
 void readConfig() {
@@ -110,13 +113,16 @@ void setup() {
   pinsConfig[DIGITAL_PIN_COUNT+0] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+2] = AI_FILTER;
+  pinsConfig[DIGITAL_PIN_COUNT+3] = AI_FILTER;
+  pinsConfig[DIGITAL_PIN_COUNT+4] = AI_FILTER;
+  pinsConfig[DIGITAL_PIN_COUNT+5] = AI_FILTER;
   
   pinsConfig[13] = DO_BOOL;
   
   pcSerial.println("boot");
   
   setupDigitalPins();
-  //wdt_enable(WDTO_2S); //Setup watchdog timeout of 1s.
+  wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
 }
 
@@ -145,7 +151,11 @@ void loop() {
                               #endif
   if (millis()>frametime) {
     frametime = millis() + (1000/FRAMERATE);
+    #ifdef ETHERNET
+    sendDataEth();
+    #elif
     sendData();
+    #endif
   }
 
   if (millis()>pingtime) {
@@ -236,7 +246,7 @@ void sendData() {
   dataSerial.print(";");
   for (int i = 0; i<DIGITAL_PIN_COUNT; i++) {
     if (pin_changed[i]) {
-      pin_changed[i] = false;
+      pin_changed[i]--;
       dataSerial.print("D");
       dataSerial.print(i);
       dataSerial.print(" ");
@@ -246,7 +256,7 @@ void sendData() {
   }
   for (int i = DIGITAL_PIN_COUNT; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i++) {
     if (pin_changed[i]) {
-      pin_changed[i] = false;
+      pin_changed[i]--;
       dataSerial.print("A");
       dataSerial.print(i-DIGITAL_PIN_COUNT);
       dataSerial.print(" ");
