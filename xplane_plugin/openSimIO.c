@@ -228,9 +228,9 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
   		XPLMSetDatai(gDataRef,0);
   	}
   }
-	if((int) inItemRef == 3) {
+	if((int) inItemRef == 4) {
 
-		sendConfigToArduino(cport_nr);
+		sendConfigToArduinoReset();
 	}
 	/* This is our handler for the menu item.  Our inItemRef is the refcon
 	 * we registered in our XPLMAppendMenuItem calls.  It is either +1000 or
@@ -350,6 +350,12 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
     //display("received %i bytes: %s\n", n, (char *)buf);
   }
 	sendDataToArduino(cport_nr);
+
+
+  sendConfigToArduino(cport_nr);
+
+
+
 	char test[] = "hejhej";
 	sendUDP(asock, test, sizeof(test));
 	int len = 32;
@@ -358,6 +364,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 	if (res>0) {
 		display("UDP %s", buf2);
 	}
+
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);
 
