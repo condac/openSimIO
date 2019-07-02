@@ -26,6 +26,8 @@
 // Use rotary encoders
 #define ROTARY_ENCODER
 
+// Use ethernet shield
+#define ETHERNET
 
 
 // ############
@@ -37,7 +39,7 @@
 
 
 String type = BOARD;
-//#define TIME_DEBUG 
+#define TIME_DEBUG 
 
 
 #include <avr/wdt.h> // Watchdog interupt // 20 bytes for setup and 2 bytes for each reset, no memory
@@ -53,6 +55,9 @@ bool pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #include "rotaryEncoder.h"
 #endif
 
+#ifdef ETHERNET
+#include "network.h" // Uses 5064 bytes of program memory and 253 bytes of memory
+#endif
 #include "pinHandle.h"
 
 
@@ -82,13 +87,17 @@ void readConfig() {
 }
 
 void setup() {
-  wdt_enable(WDTO_1S); //Setup watchdog timeout of 1s. 
+   
   Serial.begin(115200);
-  wdt_reset(); //2 bytes
+  
   pcSerial.begin(115200);
-  wdt_reset();
+  #ifdef SERIAL_CHAIN
   chainSerial.begin(115200);
-  wdt_reset();
+  #endif
+  
+  #ifdef ETHERNET
+  setupEthernet();
+  #endif
 
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
@@ -105,16 +114,24 @@ void setup() {
   pinsConfig[13] = DO_BOOL;
   
   pcSerial.println("boot");
-  wdt_reset();
+  
   setupDigitalPins();
+  //wdt_enable(WDTO_2S); //Setup watchdog timeout of 1s.
+  wdt_reset();
 }
 
 void loop() {
   wdt_reset();
+
                               #ifdef TIME_DEBUG
                               looptime = millis();
                               #endif
   handleDigitalPins();
+  #ifdef ETHERNET
+  loopEthernet();
+  wdt_reset();
+  //pcSerial.println("ethernet done");
+  #endif
 
                               #ifdef TIME_DEBUG
                               ditime = millis() - looptime;

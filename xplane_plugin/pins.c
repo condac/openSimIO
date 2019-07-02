@@ -1,4 +1,5 @@
 #include "openSimIO.h"
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include "iotypes.h"
@@ -60,7 +61,7 @@ pin_struct* lineToStruct( char* line) {
       display("Error! converting config line %s", line);
       return NULL;
   } else {
-    display("master %d slave %d %s %d %d %f %f %f %s ", newPin->master, newPin->slave, &newPin->pinNameString, &newPin->ioMode, newPin->reverse, newPin->center, newPin->pinMin, newPin->pinMax, dataRefString);
+    //display("master %d slave %d %s %d %d %f %f %f %s ", newPin->master, newPin->slave, &newPin->pinNameString, &newPin->ioMode, newPin->reverse, newPin->center, newPin->pinMin, newPin->pinMax, dataRefString);
 
 		if (newPin->ioMode > 127) {
 			newPin->output = 1;
@@ -81,6 +82,74 @@ pin_struct* lineToStruct( char* line) {
   return NULL;
 }
 
+#if defined(WINDOWS) || defined(WINDOWS64)
+/*
+ POSIX getline replacement for non-POSIX systems (like Windows)
+ Differences:
+     - the function returns int64_t instead of ssize_t
+     - does not accept NUL characters in the input file
+ Warnings:
+     - the function sets EINVAL, ENOMEM, EOVERFLOW in case of errors. The above are not defined by ISO C17,
+     but are supported by other C compilers like MSVC
+ */
+ int64_t getline(char **restrict line, size_t *restrict len, FILE *restrict fp) {
+     // Check if either line, len or fp are NULL pointers
+     if(line == NULL || len == NULL || fp == NULL) {
+         errno = EINVAL;
+         return -1;
+     }
+
+     // Use a chunk array of 128 bytes as parameter for fgets
+     char chunk[128];
+
+     // Allocate a block of memory for *line if it is NULL or smaller than the chunk array
+     if(*line == NULL || *len < sizeof(chunk)) {
+         *len = sizeof(chunk);
+         if((*line = malloc(*len)) == NULL) {
+             errno = ENOMEM;
+             return -1;
+         }
+     }
+
+     // "Empty" the string
+     (*line)[0] = '\0';
+
+     while(fgets(chunk, sizeof(chunk), fp) != NULL) {
+         // Resize the line buffer if necessary
+         size_t len_used = strlen(*line);
+         size_t chunk_used = strlen(chunk);
+
+         if(*len - len_used < chunk_used) {
+             // Check for overflow
+             if(*len > SIZE_MAX / 2) {
+                 errno = EOVERFLOW;
+                 return -1;
+             } else {
+                 *len *= 2;
+             }
+
+             if((*line = realloc(*line, *len)) == NULL) {
+                 errno = ENOMEM;
+                 return -1;
+             }
+         }
+
+         // Copy the chunk to the end of the line buffer
+         memcpy(*line + len_used, chunk, chunk_used);
+         len_used += chunk_used;
+         (*line)[len_used] = '\0';
+
+         // Check if *line contains '\n', if yes, return the *line length
+         if((*line)[len_used - 1] == '\n') {
+             return len_used;
+         }
+     }
+
+     return -1;
+ }
+#endif
+
+
 void readConfig() {
   if ((configFile = fopen("Resources/plugins/openSimIO/config.txt","r")) == NULL){
        display("Error! opening configfile");
@@ -90,12 +159,13 @@ void readConfig() {
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
+
     while ((read = getline(&line, &len, configFile)) != -1) {
       nrOfLines++;
     }
     fclose(configFile);
 
-    display("lines in config file %d", nrOfLines);
+    //display("lines in config file %d", nrOfLines);
 
     pins = malloc(nrOfLines * sizeof(pin_struct));
 
@@ -107,9 +177,7 @@ void readConfig() {
       size_t len = 0;
       ssize_t read;
       while ((read = getline(&line, &len, configFile)) != -1) {
-        printf("Retrieved line of length %zu:\n", read);
-        printf("%s", line);
-        display("%s", line);
+        //display("%s", line);
         pin_struct* newPin = lineToStruct(line);
         if (newPin != NULL) {
           memcpy(pins+nrOfPins, newPin, sizeof(pin_struct));
