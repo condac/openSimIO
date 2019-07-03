@@ -4,6 +4,7 @@
 #include <string.h>
 #include "iotypes.h"
 #include "udp.h"
+#include "rs232.h"
 
 typedef struct  {
 
@@ -43,7 +44,7 @@ pin_struct* lineToStruct( char* line) {
   }
 
   //char pinNameString[10];
-  char ioTypeString[32];
+
   char dataRefString[512];
 
   int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;%d;", &newPin->master,
@@ -444,7 +445,7 @@ void sendConfigToArduinoReset() {
 }
 void sendConfigToArduino(int cport_nr) {
   char out[512];
-  int count = 0;
+
   // send digital data to arduino
   if (sendcount<nrOfPins) {
     int i = sendcount;

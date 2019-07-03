@@ -268,7 +268,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
 }
 
 
-int RS232_PollComport(int comport_number, unsigned char *buf, int size)
+int RS232_PollComport(int comport_number, char *buf, int size)
 {
   int n;
 
@@ -283,7 +283,7 @@ int RS232_PollComport(int comport_number, unsigned char *buf, int size)
 }
 
 
-int RS232_SendByte(int comport_number, unsigned char byte)
+int RS232_SendByte(int comport_number, char byte)
 {
   int n = write(Cport[comport_number], &byte, 1);
   if(n < 0)
@@ -302,7 +302,7 @@ int RS232_SendByte(int comport_number, unsigned char byte)
 }
 
 
-int RS232_SendBuf(int comport_number, unsigned char *buf, int size)
+int RS232_SendBuf(int comport_number, char *buf, int size)
 {
   int n = write(Cport[comport_number], buf, size);
   if(n < 0)
@@ -689,7 +689,7 @@ https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_dcb
 }
 
 
-int RS232_PollComport(int comport_number, unsigned char *buf, int size)
+int RS232_PollComport(int comport_number, char *buf, int size)
 {
   int n;
 
@@ -702,7 +702,7 @@ int RS232_PollComport(int comport_number, unsigned char *buf, int size)
 }
 
 
-int RS232_SendByte(int comport_number, unsigned char byte)
+int RS232_SendByte(int comport_number, char byte)
 {
   int n;
 
@@ -714,7 +714,7 @@ int RS232_SendByte(int comport_number, unsigned char byte)
 }
 
 
-int RS232_SendBuf(int comport_number, unsigned char *buf, int size)
+int RS232_SendBuf(int comport_number, char *buf, int size)
 {
   int n;
 
@@ -860,14 +860,3 @@ int RS232_GetPortnr(const char *devname)
 
   return -1;  /* device not found */
 }
-
-
-
-
-
-
-
-
-
-
-

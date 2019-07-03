@@ -1,5 +1,7 @@
 #include "openSimIO.h"
 #include "udp.h"
+#include "pins.h"
+#include "rs232.h"
 // Downloaded from https://developer.x-plane.com/code-sample/hello-world-sdk-3/
 
 
@@ -219,13 +221,13 @@ void	draw_hello_world(XPLMWindowID in_window_id, void * in_refcon)
 
 
 void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
-  display("%d",(int)inItemRef);
-  if((int) inItemRef == 1) {
+  //display("%d",(int)inItemRef);
+  if(inItemRef == 1) {
     // toggle console
     TeensyControls_show = !TeensyControls_show;
     TeensyControls_display_toggle();
   }
-  if((int) inItemRef == 2) {
+  if(inItemRef == 2) {
     // set pitot
     if (gDataRef != NULL)	{
   		/* We read the data ref, add the increment and set it again.
@@ -233,7 +235,7 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
   		XPLMSetDatai(gDataRef,1);
   	}
   }
-  if((int) inItemRef == 3) {
+  if( inItemRef == 3) {
     // set pitot
     if (gDataRef != NULL)	{
   		/* We read the data ref, add the increment and set it again.
@@ -241,7 +243,7 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
   		XPLMSetDatai(gDataRef,0);
   	}
   }
-	if((int) inItemRef == 4) {
+	if( inItemRef == 4) {
 
 		sendConfigToArduinoReset();
 	}
@@ -266,11 +268,11 @@ void parseToken(char* data) {
 
 }
 
-void parseMessage(char* data) {
+void parseMessage( char* data) {
   // data is sepperated with semicolon
-  char seps[] = ";";
-  char* token;
-  int test = 1;
+
+
+
   int masterId;
   char inputString[4000];
   //display("parseMessage data %s", data);
@@ -281,7 +283,7 @@ void parseMessage(char* data) {
 
   char x;
   int pos = 0;
-	seps[0] = ",";
+
 
   x = inputString[pos];
   while (x != '\0')  {
@@ -371,9 +373,9 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
            void*  inRefcon)
 {
 	/* The actual callback.  First we read the sim's time and the data. */
-	float	elapsed = XPLMGetElapsedTime();
+	//float	elapsed = XPLMGetElapsedTime();
 
-  int i, n;
+  int n;
   char buf[4096];
 
   n = RS232_PollComport(cport_nr, buf, 4095);
@@ -395,7 +397,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 
 
 
-	int len = 32;
+
 	//char buf2[len];
 	int res = readUDP(asock, buf, 4095);
   if (res>0) {
@@ -410,7 +412,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 
   // Tell the arduino that we are ready for next frame.
   char out[10] = "*";
-  sendUDP(asock, out, sizeof(out)); 
+  sendUDP(asock, out, sizeof(out));
 
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);

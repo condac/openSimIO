@@ -84,8 +84,8 @@ XPLM200—X-Plane 9.00 & newer
 #include "XPLMMenus.h"
 
 
-static void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef);
-
+void MyMenuHandlerCallback(void* inMenuRef, void* inItemRef);
+void reloadConfig();
 
 // display.c
 extern int TeensyControls_show;

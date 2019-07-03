@@ -71,7 +71,7 @@ int inet_pton4(const char *src, char *dst)
 
     return 1;
 }
-
+/*
 int inet_pton6(const char *src, char *dst)
 {
     static const char xdigits[] = "0123456789abcdef";
@@ -81,7 +81,7 @@ int inet_pton6(const char *src, char *dst)
     uint8_t *endp = tp + NS_IN6ADDRSZ;
     uint8_t *colonp = NULL;
 
-    /* Leading :: requires some special handling. */
+
     if (*src == ':')
     {
         if (*++src != ':')
@@ -131,7 +131,7 @@ int inet_pton6(const char *src, char *dst)
         {
             tp += NS_INADDRSZ;
             saw_xdigit = 0;
-            break; /* '\0' was seen by inet_pton4(). */
+            break; // '\0' was seen by inet_pton4().
         }
         return 0;
     }
@@ -144,10 +144,7 @@ int inet_pton6(const char *src, char *dst)
     }
     if (colonp != NULL)
     {
-        /*
-         * Since some memmove()'s erroneously fail to handle
-         * overlapping regions, we'll do the shift by hand.
-         */
+
         const int n = tp - colonp;
 
         if (tp == endp)
@@ -167,6 +164,8 @@ int inet_pton6(const char *src, char *dst)
 
     return 1;
 }
+*/
+
 
 int setnonblocking(udpSocket sock) {
 #if defined(WINDOWS) || defined(WINDOWS64)
@@ -293,8 +292,7 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
 }*/
 
 
-int readUDP(udpSocket sock, char buffer[], int len)
-{
+int readUDP(udpSocket sock, char buffer[], int len) {
 #if defined(WINDOWS) || defined(WINDOWS64)
 	// Windows readUDP needs the select command- minimum timeout is 1ms.
 	// Without this playback becomes choppy
