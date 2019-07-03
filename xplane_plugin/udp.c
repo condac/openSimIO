@@ -226,7 +226,9 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
 
 	return sock;
 }
+#if defined(WINDOWS) || defined(WINDOWS64)
 
+#else
 int dataAvaible(udpSocket sock) {
   //return 1;
   fd_set readfds;
@@ -244,7 +246,7 @@ int dataAvaible(udpSocket sock) {
 
   return res;
 }
-
+#endif
 int sendUDP(udpSocket socket, char buffer[], int len) {
 
 	struct sockaddr_in dest;
@@ -270,7 +272,7 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
 	return res;
 }
 
-int readUDP2(udpSocket sock, char buffer[], int len) {
+/*int readUDP2(udpSocket sock, char buffer[], int len) {
 
   // create non blocking udp read
   int res = 0;
@@ -288,12 +290,12 @@ int readUDP2(udpSocket sock, char buffer[], int len) {
       return -1;
     }
   }
-}
+}*/
 
 
 int readUDP(udpSocket sock, char buffer[], int len)
 {
-#ifdef _WIN32
+#if defined(WINDOWS) || defined(WINDOWS64)
 	// Windows readUDP needs the select command- minimum timeout is 1ms.
 	// Without this playback becomes choppy
 
