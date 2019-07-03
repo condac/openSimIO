@@ -406,7 +406,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
       // ONly half of message recieved or garbage
       //display("received %i bytes: %s\n", n, (char *)buf);
     } else {
-			//display("received udp %i bytes: %s\n", n, (char *)buf);
+			display("received udp %i bytes: %s\n", res, (char *)buf);
       parseSerialInput(buf, res);
     }
   }

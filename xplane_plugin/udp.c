@@ -293,7 +293,10 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
 
 
 int readUDP(udpSocket sock, char buffer[], int len) {
-#if defined(WINDOWS) || defined(WINDOWS64)
+#if defined(WINDOWSzzzzz) || defined(WINDOWSzzzz64)
+
+  // zzzzz* Turns out windows do not need this when compiling through mingw in linux
+
 	// Windows readUDP needs the select command- minimum timeout is 1ms.
 	// Without this playback becomes choppy
 
