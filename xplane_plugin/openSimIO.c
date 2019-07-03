@@ -408,6 +408,10 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
     }
   }
 
+  // Tell the arduino that we are ready for next frame.
+  char out[10] = "*";
+  sendUDP(asock, out, sizeof(out)); 
+
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);
 

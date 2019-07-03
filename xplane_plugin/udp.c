@@ -330,7 +330,7 @@ int readUDP(udpSocket sock, char buffer[], int len)
 #endif
 	if (status < 0)
 	{
-		display("Error reading socket");
+		//display("Error reading socket");
 	}
 	return status;
 }

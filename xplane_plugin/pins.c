@@ -224,8 +224,15 @@ void setAnalogPin() {
 
 }
 
+float map(float s, float a1, float a2, float b1, float b2)
+{
+    return b1 + (s-a1)*(b2-b1)/(a2-a1);
+}
+
+
 float mapValue(float value, float min, float max, float center, float outMin, float outMax, int reverse) {
-  float out = ((float)value/512.0) - 1.0;
+  float out = 0.0;
+  float outCenter = (outMin + outMax) /2;
 
   if (value>max) {
     value = max;
@@ -234,21 +241,25 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
     value = min;
   }
 
-  if (value>=center) {
-    value = value - center;
-    float scale = outMax / (max-center) ;
-    out = value * scale;
-  } else {
-    value = value - center;
-    float scale = outMin / (min - center);
-    if (scale < 0) {
-      scale = scale * (-1.0);
-    }
-    out = value * scale;
-  }
+
   if (reverse == 1) {
-    out = out*-1.0;
+    if (value>=center) {
+      out = map(value, center, max, outCenter, outMin);
+
+    } else {
+      out = map(value, min, center, outMax, outCenter);
+    }
+  } else {
+    if (value>=center) {
+      out = map(value, center, max, outCenter, outMax);
+
+    } else {
+      out = map(value, min, center, outMin, outCenter);
+    }
   }
+
+
+
 
   if (out>outMax) {
     out = outMax;

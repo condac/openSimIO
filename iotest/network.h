@@ -20,7 +20,7 @@ EthernetUDP Udp;
 
 IPAddress remote;
 
-void setupEthernet() {
+int setupEthernet() {
   pcSerial.println("starting network");
   // start the Ethernet
   Ethernet.begin(mac, ip);
@@ -35,7 +35,7 @@ void setupEthernet() {
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     pcSerial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
     while (true) {
-      delay(1); // do nothing, no point running without Ethernet hardware
+      return 0;
     }
   }
   if (Ethernet.linkStatus() == LinkOFF) {
@@ -44,7 +44,7 @@ void setupEthernet() {
 
   // start UDP
   Udp.begin(localPort);
-  
+  return 1;
 }
 
 
@@ -68,7 +68,13 @@ void loopEthernet() {
     // read the packet into packetBufffer
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
 //    Serial.println("Contents:");
-    Serial.println(packetBuffer);
+    
+    if (packetBuffer[0] == '*') {
+      //Serial.println("clear to send!");
+      cts = true;
+    } else {
+      Serial.println(packetBuffer);
+    }
     wdt_reset();
     // send a reply to the IP address and port that sent us the packet we received
 //    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
@@ -82,7 +88,9 @@ void loopEthernet() {
 
 void sendDataEth() {
   //Serial.print("sendDataEth:");
+  cts = false;
   bool changes = false;
+  
   for (int i = 0; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i++) {
     if (pin_changed[i]) {
       changes = true;

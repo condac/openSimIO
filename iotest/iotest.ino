@@ -58,6 +58,7 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #endif
 
 int myId = 0; // this will automaticly be set by the chain ping loop
+bool cts = true;
 #ifdef ETHERNET
 #include "network.h" // Uses 5064 bytes of program memory and 253 bytes of memory
 #endif
@@ -99,7 +100,10 @@ void setup() {
   #endif
   
   #ifdef ETHERNET
-  setupEthernet();
+  while (setupEthernet() != 1) {
+    delay(100);
+  }
+  
   #endif
 
   // temporary hardcoded setups
@@ -149,11 +153,11 @@ void loop() {
                               aitime = millis() - aitime;
                               serialtime = millis();
                               #endif
-  if (millis()>frametime) {
+  if (millis()>frametime && cts) {
     frametime = millis() + (1000/FRAMERATE);
     #ifdef ETHERNET
     sendDataEth();
-    #elif
+    #else
     sendData();
     #endif
   }
@@ -199,10 +203,20 @@ void loop() {
                                         Serial.print(chaintime);
                                         
                                         Serial.print(" loop:");
-                                        Serial.println(looptime);
-                                      
-                                      
-                                        
+                                        Serial.print(looptime);
+
+                                        Serial.print(" A0:");
+                                        Serial.print(analogRead(A0));
+                                        Serial.print(" A1:");
+                                        Serial.print(analogRead(A1));
+                                        Serial.print(" A2:");
+                                        Serial.print(analogRead(A2));
+                                        Serial.print(" A3:");
+                                        Serial.print(analogRead(A3));
+                                        Serial.print(" A4:");
+                                        Serial.print(analogRead(A4)); 
+                                        Serial.print(" A5:");
+                                        Serial.println(analogRead(A5));   
                                         Serial.flush();
                                       }
                                 #endif
