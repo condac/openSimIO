@@ -180,7 +180,8 @@ pin_struct* lineToStruct( char* line) {
 
 
 void readConfig() {
-
+	nrOfLines = 0;
+	nrOfPins = 0;
   if ((configFile = fopen("Resources/plugins/openSimIO/config.txt","r")) == NULL){
        display("Error! opening configfile");
 
@@ -440,7 +441,7 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 
 int sendcount = 0;
 
-void sendConfigToArduinoReset() {
+void sendConfigReset() {
   sendcount = 0;
 }
 void sendConfigToArduino(int cport_nr) {
@@ -454,6 +455,20 @@ void sendConfigToArduino(int cport_nr) {
     int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
     display("write serial:%s", out);
     RS232_SendBuf(cport_nr, out, len+1);
+  }
+}
+void sendConfigToEth(udpSocket sock) {
+  char out[512];
+
+  // send digital data to arduino
+  if (sendcount<nrOfPins) {
+    int i = sendcount;
+    sendcount++;
+    //{1;2;0;D3,1,0;A2,5,3;}
+    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
+    display("write udp:%s", out);
+		sendUDP(sock, out, len+1);
+    //RS232_SendBuf(cport_nr, out, len+1);
   }
 }
 

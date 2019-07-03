@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 60
+#define FRAMERATE 50
 
 // ############
 // Plugins
@@ -36,7 +36,7 @@
 
 
 #include "boards.h"
-
+#include "common.h"
 
 String type = BOARD;
 #define TIME_DEBUG 
@@ -59,10 +59,15 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 int myId = 0; // this will automaticly be set by the chain ping loop
 bool cts = true;
+long loops = 0;
+
+#include "pinHandle.h"
+
 #ifdef ETHERNET
+void setConfig(int nr, int mode, int extra);
 #include "network.h" // Uses 5064 bytes of program memory and 253 bytes of memory
 #endif
-#include "pinHandle.h"
+
 
 
 
@@ -109,7 +114,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  pinsConfig[3] = DO_LOW;
+  /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
   pinsConfig[6] = DI_ROTARY_ENCODER_TYPE1;
@@ -121,16 +126,18 @@ void setup() {
   pinsConfig[DIGITAL_PIN_COUNT+4] = AI_FILTER;
   pinsConfig[DIGITAL_PIN_COUNT+5] = AI_FILTER;
   
-  pinsConfig[13] = DO_BOOL;
-  
+  pinsConfig[13] = DO_BOOL;*/
+  pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
+  pinsConfig[DIGITAL_PIN_COUNT+2] = AI_RAW;
   pcSerial.println("boot");
   
   setupDigitalPins();
-  wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
+  //wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
 }
 
 void loop() {
+  loops++;
   wdt_reset();
 
                               #ifdef TIME_DEBUG
@@ -155,6 +162,9 @@ void loop() {
                               #endif
   if (millis()>frametime && cts) {
     frametime = millis() + (1000/FRAMERATE);
+    Serial.print("loops:");
+    Serial.println(loops);
+    loops = 0;
     #ifdef ETHERNET
     sendDataEth();
     #else
@@ -186,13 +196,16 @@ void loop() {
             
                                 #ifdef TIME_DEBUG
                                       if (millis()>debugtime) {
-                                        debugtime = millis() + (1000); 
+                                        
+                                        debugtime = millis() + (5000); 
                                         
                                         looptime = millis() - looptime;
                                       
                                         Serial.print("digital:");
                                         Serial.print(ditime);
-                                        
+                                        //pinMode(50, INPUT_PULLUP);
+                                        //pinMode(51, INPUT_PULLUP);
+                                        //pinMode(52, INPUT_PULLUP);
                                         Serial.print(" analog:");
                                         Serial.print(aitime);
                                         
@@ -564,6 +577,12 @@ void handleConfigMessage(HardwareSerial& inSerial) {
 void setConfig(int nr, int mode, int extra) {
   pinsConfig[nr] = mode;
   pinsExtra[nr] = extra; 
+  pcSerial.print("setConfig pinnr: ");
+  pcSerial.print(nr);
+  pcSerial.print("mode: ");
+  pcSerial.print(mode);
+  pcSerial.print("extra: ");
+  pcSerial.println(extra);
 }
 void saveConfig() {
   // TODO

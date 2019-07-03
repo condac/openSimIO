@@ -4,7 +4,8 @@
 // Not sure if pinHandle is best English, send me an issue on github if you know better name ;)
 
 int pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; // this array keeps the configuration a pin have
-
+long analogFilter[ANALOG_PIN_COUNT+1][11];
+int analogFilter2[ANALOG_PIN_COUNT];
 
 void checkPinChanged( int pin) {
   bool currentState = digitalRead(pin);
@@ -18,6 +19,26 @@ void checkPinChanged( int pin) {
 void readAnalogPinRaw( int pin) {
   
   int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
+  
+  analogFilter[pin-DIGITAL_PIN_COUNT][analogFilter2[pin-DIGITAL_PIN_COUNT]] = currentState;
+  long sum = 0;
+  for (int i=0;i<10;i++) {
+    int test = analogFilter[pin-DIGITAL_PIN_COUNT][i];
+    sum = sum + test;
+//    Serial.print(",");
+//    Serial.print(test);
+  }
+  analogFilter2[pin-DIGITAL_PIN_COUNT]++;
+  if (analogFilter2[pin-DIGITAL_PIN_COUNT] > 10) {
+    analogFilter2[pin-DIGITAL_PIN_COUNT] = 0;
+  }
+  
+  sum = sum /10;
+//  Serial.print("sum ");
+//  Serial.print(sum);
+//  Serial.print("currentState ");
+//  Serial.println(currentState);
+  currentState = sum;
   if (currentState != pinsData[pin]) {
     pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;

@@ -244,8 +244,8 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
   	}
   }
 	if( inItemRef == 4) {
-
-		sendConfigToArduinoReset();
+		reloadConfig();
+		sendConfigReset();
 	}
 	/* This is our handler for the menu item.  Our inItemRef is the refcon
 	 * we registered in our XPLMAppendMenuItem calls.  It is either +1000 or
@@ -393,7 +393,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 	//sendDataToArduino(cport_nr);
   sendDataToUDP(asock);
   //sendConfigToArduino(cport_nr);
-
+	sendConfigToEth(asock);
 
 
 
@@ -406,6 +406,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
       // ONly half of message recieved or garbage
       //display("received %i bytes: %s\n", n, (char *)buf);
     } else {
+			//display("received udp %i bytes: %s\n", n, (char *)buf);
       parseSerialInput(buf, res);
     }
   }

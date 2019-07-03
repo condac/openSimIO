@@ -72,22 +72,72 @@ void loopEthernet() {
     if (packetBuffer[0] == '*') {
       //Serial.println("clear to send!");
       cts = true;
-    } else {
+    } else if (packetBuffer[0] == '{') {
+      Serial.println(packetBuffer);
+      // find out what type of message
+      char substr[10];
+      int current = 1;
+
+      current = getNextSubStr(packetBuffer, substr, current, ';');
+      int master = atoi(substr);
+//      Serial.print("master:");
+//      Serial.println(master);
+//      Serial.println(substr);
+      current = getNextSubStr(packetBuffer, substr, current, ';');
+      int slave = atoi(substr);
+//      Serial.print("slave:");
+//      Serial.println(slave);
+//      Serial.println(substr);
+      current = getNextSubStr(packetBuffer, substr, current, ';');
+      int what = atoi(substr);
+      Serial.print("what:");
+      Serial.println(what);
+      Serial.println(substr);
+      if (what == 1 || what == 2) {
+        // set config
+        current = getNextSubStr(packetBuffer, substr, current, ',');
+        int pinNr = atoi(substr+1);
+        if (substr[0] == 'A') {
+          pinNr = pinNr+DIGITAL_PIN_COUNT;
+        }
+//        Serial.print("pinNr:");
+//        Serial.println(pinNr);
+//        Serial.println(substr);
+        current = getNextSubStr(packetBuffer, substr, current, ',');
+        int pinmode = atoi(substr);
+//        Serial.print("pinmode:");
+//        Serial.println(pinmode);
+//        Serial.println(substr);
+        current = getNextSubStr(packetBuffer, substr, current, ';');
+        int pinExtra = atoi(substr);
+//        Serial.print("pinExtra:");
+//        Serial.println(pinExtra);
+//        Serial.println(substr);
+        
+        setConfig(pinNr, pinmode, pinExtra);
+        wdt_reset();
+        setupAllPins();
+        wdt_reset();
+      } else if (what == 0) {
+        // set value
+      }
+      
+      
+    }
+    else {
       Serial.println(packetBuffer);
     }
     wdt_reset();
-    // send a reply to the IP address and port that sent us the packet we received
-//    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-//    //ReplyBuffer[5] = '\0';
-//    Udp.write(ReplyBuffer);
-//    Udp.endPacket();
+
   }
 
 }
 
 
+
 void sendDataEth() {
-  //Serial.print("sendDataEth:");
+//  Serial.print("sendDataEth loops:");
+//  Serial.println(loops);
   cts = false;
   bool changes = false;
   
