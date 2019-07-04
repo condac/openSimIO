@@ -164,8 +164,8 @@ void loop() {
   if (millis()>frametime && cts) {
     frametime = millis() + (1000/FRAMERATE);
     #ifdef TIME_DEBUG
-    Serial.print("loops:");
-    Serial.println(loops);
+//    Serial.print("loops:");
+//    Serial.println(loops);
     #endif
     loops = 0;
     #ifdef ETHERNET

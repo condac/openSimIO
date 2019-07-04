@@ -62,7 +62,7 @@ pin_struct* lineToStruct( char* line) {
                                                                                          &newPin->xplaneMax,
 																																											   &newPin->extraInfo  );
   // find index for dataRef
-  XPLMDebugString("lineToStruct\n");
+
   int pos = 0;
   for (int i = 0; i< 512;i++) {
     if (dataRefString[i] == '[') {
@@ -72,21 +72,21 @@ pin_struct* lineToStruct( char* line) {
     }
   }
   //int pos = strstr(dataRefString, "[");
-  XPLMDebugString("lineToStruct2\n");
+
   if ( pos>0) {
     int index = 0;
     sscanf(dataRefString+pos, "[%d]", &index);
-    XPLMDebugString("lineToStruct3\n");
+
     dataRefString[pos] = '\0';
-    XPLMDebugString("lineToStruct4\n");
-    display("index in dataref %s %d", dataRefString, index);
-    XPLMDebugString("lineToStruct5\n");
+
+    //display("index in dataref %s %d", dataRefString, index);
+
     newPin->dataRefIndex = index;
   }else {
-    XPLMDebugString("lineToStruct6\n");
+
     newPin->dataRefIndex = 0;
   }
-  XPLMDebugString("lineToStruct7 index");
+
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
   if(conversionCount != 12) {
       display("Error! converting config line %s", line);

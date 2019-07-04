@@ -429,12 +429,13 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
       // ONly half of message recieved or garbage
       //display("received %i bytes: %s\n", n, (char *)buf);
     } else {
-			display("received udp %i bytes: %s\n", res, (char *)buf);
+			//display("received udp %i bytes: %s\n", res, (char *)buf);
       parseSerialInput(buf, res);
     }
   }
 	if (signal < elapsed - 5.0) {
-		display("Error! no connection for 5s, resending config");
+		display("Error! no connection for 5s");
+		signal = elapsed;
 	}
   // Tell the arduino that we are ready for next frame.
   char out[10] = "*";
