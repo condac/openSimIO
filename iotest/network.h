@@ -94,6 +94,7 @@ void loopEthernet() {
       Serial.println(what);
       Serial.println(substr);
       if (what == 1 || what == 2) {
+        unconfigured = false;
         // set config
         current = getNextSubStr(packetBuffer, substr, current, ',');
         int pinNr = atoi(substr+1);
@@ -115,9 +116,10 @@ void loopEthernet() {
 //        Serial.println(substr);
         
         setConfig(pinNr, pinmode, pinExtra);
-        wdt_reset();
+        //wdt_reset();
         setupAllPins();
-        wdt_reset();
+        //wdt_reset();
+        
       } else if (what == 0) {
         // set value
       }
@@ -165,7 +167,12 @@ void sendDataEth() {
 
   Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
 
-  Udp.write("{99;");
+  if (unconfigured) {
+    Udp.write("{98;");
+  }else  {
+    Udp.write("{99;");
+  }
+  
   #ifdef MASTER
   itoa(MASTER_ID,strbuf,10);
   Udp.write(strbuf);

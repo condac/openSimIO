@@ -15,7 +15,7 @@
 #define SERIAL_CHAIN
 
 
-#define FRAMERATE 50
+#define FRAMERATE 60
 
 // ############
 // Plugins
@@ -59,8 +59,9 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 int myId = 0; // this will automaticly be set by the chain ping loop
 bool cts = true;
+bool unconfigured = true;
 long loops = 0;
-
+int cyclic = 0;
 #include "pinHandle.h"
 
 #ifdef ETHERNET
@@ -98,7 +99,7 @@ void readConfig() {
 void setup() {
    
   Serial.begin(115200);
-  
+  pcSerial.println("boot");
   pcSerial.begin(115200);
   #ifdef SERIAL_CHAIN
   chainSerial.begin(115200);
@@ -129,10 +130,10 @@ void setup() {
   pinsConfig[13] = DO_BOOL;*/
   pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
   pinsConfig[DIGITAL_PIN_COUNT+2] = AI_RAW;
-  pcSerial.println("boot");
+  pcSerial.println("boot2");
   
   setupDigitalPins();
-  //wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
+  wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
 }
 
@@ -162,14 +163,17 @@ void loop() {
                               #endif
   if (millis()>frametime && cts) {
     frametime = millis() + (1000/FRAMERATE);
+    #ifdef TIME_DEBUG
     Serial.print("loops:");
     Serial.println(loops);
+    #endif
     loops = 0;
     #ifdef ETHERNET
     sendDataEth();
     #else
     sendData();
     #endif
+    cyclicRefresh();
   }
 
   if (millis()>pingtime) {
@@ -607,4 +611,24 @@ void relayToPC() {
   pcSerial.println(data);
   return;
 
+}
+
+void cyclicRefresh() {
+
+  while(pinsConfig[cyclic]<1) {
+    cyclic++;
+    if (cyclic > DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT) {
+      cyclic =0;
+      break;
+    }
+  }
+  
+  
+  if (pinsConfig[cyclic]!=0) {
+
+    pin_changed[cyclic]++;
+    
+  } 
+  cyclic++;
+  
 }

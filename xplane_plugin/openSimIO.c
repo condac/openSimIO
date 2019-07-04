@@ -44,10 +44,12 @@ int cport_nr=16;        /* /dev/ttyS0 (COM1 on windows) */
 int bdrate=115200;       /* 9600 baud */
 
 int slaveId = 0;
+float signal = 0.0;
 
 udpSocket asock;
 
 void reloadConfig() {
+	XPLMDebugString("reloadConfig\n");
   readConfig();
 }
 
@@ -333,13 +335,27 @@ void parseSerialInput( char* data, int len) {
 
   token = strtok(data, seps);
   while (token != NULL)  {
-    token = strstr(token, "99;");
-    if(token != NULL) {
+    char* token2 = strstr(token, "99;");
+    if(token2 != NULL) {
       //display("data for me %s", data);
 
       //strncpy(slask, data, len);
       //slaveId = getSlaveId(slask);
       parseMessage(data);
+
+      //display("id for me %d %s",id,  data);
+    }
+		token2 = strstr(token, "98;");
+    if(token2 != NULL) {
+			XPLMDebugString("reconfigure 98\n");
+      display("reconfigure %s", data);
+
+      //strncpy(slask, data, len);
+      //slaveId = getSlaveId(slask);
+      //parseMessage(data);
+			if (signal>5.0) {
+				reloadConfig();
+			}
 
       //display("id for me %d %s",id,  data);
     }
@@ -373,7 +389,11 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
            void*  inRefcon)
 {
 	/* The actual callback.  First we read the sim's time and the data. */
-	//float	elapsed = XPLMGetElapsedTime();
+	float	elapsed = XPLMGetElapsedTime();
+	setTimeStep(elapsed);
+
+	// call function too check if there is an ongoing event for pushed buttons
+	setStepLoop();
 
   int n;
   char buf[4096];
@@ -401,6 +421,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 	//char buf2[len];
 	int res = readUDP(asock, buf, 4095);
   if (res>0) {
+		signal = elapsed;
     buf[res] = '\0';
     if (ifCharInArray(buf, '}') == -1) {
       // ONly half of message recieved or garbage
@@ -410,7 +431,9 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
       parseSerialInput(buf, res);
     }
   }
-
+	if (signal < elapsed - 5.0) {
+		display("Error! no connection for 5s, resending config");
+	}
   // Tell the arduino that we are ready for next frame.
   char out[10] = "*";
   sendUDP(asock, out, sizeof(out));

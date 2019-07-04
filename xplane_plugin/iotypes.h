@@ -1,8 +1,9 @@
 // This file must be in sync with your plugin in your computer
 // values over 128 is considered an output to make things simple in some parts of the code
 #define NOTUSED 0
-#define DI_INPUT_PULLUP 1
+#define DI_INPUT_PULLUP 1 // Will return 1 when button is pressed, going low to ground
 #define DI_INPUT_FLOATING 2
+#define DI_INPUT_STEP 3 // Will step increase a value while holding the button presed
 #define DO_BOOL 129 // digital out 1 or 0
 #define AI_RAW 4 // Use only with main flight control, this will most likely update every frame
 #define AI_FILTER 5 // Use this, Noize and deadband filtered to avoid lot of communication spam.

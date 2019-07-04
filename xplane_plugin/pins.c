@@ -32,6 +32,8 @@ FILE *configFile;
 
 int nrOfLines = 0;
 int nrOfPins = 0;
+float timeStep = 0;
+float timeLast = 0;
 
 pin_struct *pins;
 
@@ -298,7 +300,97 @@ void setAnalogData(int i, int value) {
       }
 
 }
+void setRawDataF(int i, float value) {
+  display("setRawDataF %f", value);
 
+      int type = XPLMGetDataRefTypes(pins[i].dataRef);
+
+      if (type == xplmType_Int) {
+        int setValue[1];
+        setValue[0] = (int) value;
+
+        XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+      } else if (type == xplmType_Float) {
+        //display("setAnalogData setting float %s %f %d %d ", pins[i].pinNameString, setValue, value, pins[i].dataRefIndex);
+        XPLMSetDataf(pins[i].dataRef,value);
+      } else if (type == xplmType_Double) {
+        double setValue[1];
+        setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        //display("setAnalogData setting double %s %f", pinName, setValue);
+        XPLMSetDatad(pins[i].dataRef,setValue[0]);
+      } else if (type == xplmType_FloatArray) {
+        float setValue[1];
+        setValue[0] = value;
+        //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
+        XPLMSetDatavf(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+      }
+
+}
+
+float getRawDataF(int i) {
+
+      int type = XPLMGetDataRefTypes(pins[i].dataRef);
+
+      if (type == xplmType_Int) {
+
+        return (float)XPLMGetDatai(pins[i].dataRef);
+      } else if (type == xplmType_Float) {
+        //display("setAnalogData setting float %s %f %d %d ", pins[i].pinNameString, setValue, value, pins[i].dataRefIndex);
+        return XPLMGetDataf(pins[i].dataRef);
+      } else if (type == xplmType_Double) {
+        //display("setAnalogData setting double %s %f", pinName, setValue);
+        XPLMGetDatad(pins[i].dataRef);
+      } else if (type == xplmType_FloatArray) {
+        float readValue[1];
+
+        //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
+        XPLMGetDatavf(pins[i].dataRef,readValue, pins[i].dataRefIndex, 1);
+				return readValue[0];
+      }
+
+}
+
+void setTimeStep(float in) {
+
+	timeStep = in - timeLast;
+	timeLast = in;
+}
+
+void setStepData(int pin, int value) {
+	// increse step while holding button based on time elapsed
+	// the center value in configuration is the steps per second we want to create
+	pins[pin].prevValue = value;
+
+
+}
+
+void setStepLoop() {
+	for (int i=0;i<nrOfPins;i++) {
+		if (pins[i].ioMode == DI_INPUT_STEP) {
+			if (pins[i].prevValue == 1) {
+			// increse step while holding button based on time elapsed
+			// the center value in configuration is the steps per second we want to create
+
+				// Read current data
+				float current = getRawDataF(i);
+				float out = pins[i].center * timeStep;
+				if (pins[i].reverse == 1) {
+					current = current - out;
+				} else {
+					current = current + out;
+				}
+				if (current > pins[i].xplaneMax) {
+					current = pins[i].xplaneMax;
+				}
+				if (current < pins[i].xplaneMin) {
+					current = pins[i].xplaneMin;
+				}
+				setRawDataF(i, current);
+			}
+		}
+
+	}
+}
 
 void setDigitalData(int i, int value) {
 
@@ -359,8 +451,6 @@ void setDigitalPin(int cport_nr,int pin, int value ) {
 }
 void sendDataToArduino(int cport_nr) {
 
-
-
 	for (int i=0;i<nrOfPins;i++) {
 		if (pins[i].output == 1) {
 			int type = XPLMGetDataRefTypes(pins[i].dataRef);
@@ -412,22 +502,26 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 				    case 0:    // not configured
 
 				      break;
-						case DI_INPUT_PULLUP:    // not configured
+						case DI_INPUT_PULLUP:    //
 							setDigitalData(i, var);
 							break;
-						case DI_INPUT_FLOATING:    // not configured
+						case DI_INPUT_FLOATING:    //
 							setDigitalData(i, var);
 							break;
-						case AI_RAW:    // not configured
+						case DI_INPUT_STEP:    //
+							setStepData(i, var);
+							break;
+
+						case AI_RAW:    //
 							setAnalogData(i, var);
 							break;
-						case AI_FILTER:    // not configured
+						case AI_FILTER:    //
 							setAnalogData(i, var);
 							break;
-						case DI_ROTARY_ENCODER_TYPE1:    // not configured
+						case DI_ROTARY_ENCODER_TYPE1:    //
 							setDigitalData(i, var);
 							break;
-						case DI_3WAY_2:    // not configured
+						case DI_3WAY_2:    //
               //XPLMDebugString("3way switch\n");
 							setAnalogData(i, var);
 							break;

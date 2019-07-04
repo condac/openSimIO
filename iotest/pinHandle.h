@@ -8,12 +8,11 @@ long analogFilter[ANALOG_PIN_COUNT+1][11];
 int analogFilter2[ANALOG_PIN_COUNT];
 
 void checkPinChanged( int pin) {
-  bool currentState = digitalRead(pin);
+  bool currentState = !digitalRead(pin);
   if (currentState != pinsData[pin]) {
     pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
-    
 }
 
 void readAnalogPinRaw( int pin) {
@@ -97,6 +96,9 @@ void handlePins(int pinArray[], int numberOfPins) {
     case DI_INPUT_FLOATING:    // same as with pullup, only setup initiation is different
       checkPinChanged(i);
       break;
+    case DI_INPUT_STEP:    // same as with pullup, handled in plugin software
+      checkPinChanged(i);
+      break;
     case AI_RAW:    // Analog raw value
       readAnalogPinRaw(i);
       break;
@@ -139,6 +141,9 @@ void setupPins(int configArray[], int numberOfPins) {
       break;
     case DI_INPUT_FLOATING:    // same as with pullup, only setup initiation is different
       pinMode(i, INPUT);
+      break;
+    case DI_INPUT_STEP:    // 
+      pinMode(i, INPUT_PULLUP);
       break;
     case DO_HIGH:    // just set the pin to 5v
       pinMode(i, OUTPUT);
