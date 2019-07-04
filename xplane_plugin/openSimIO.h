@@ -73,8 +73,8 @@ XPLM200—X-Plane 9.00 & newer
 */
 #define XPLM200 1
 #define XPLM210 1
-#define XPLM300 1
-#define XPLM301 1
+//#define XPLM300 1
+//#define XPLM301 1
 
 #include "XPLMDisplay.h" // download xplane SDK and put in SDK folder https://developer.x-plane.com/sdk/plugin-sdk-downloads/
 #include "XPLMGraphics.h"

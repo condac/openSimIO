@@ -19,9 +19,9 @@
 	#include <GL/gl.h>
 #endif
 
-#ifndef XPLM300
-	#error This is made to be compiled against the XPLM300 SDK
-#endif
+//#ifndef XPLM300
+//	#error This is made to be compiled against the XPLM300 SDK
+//#endif
 
 // An opaque handle to the window we will create
 static XPLMWindowID	g_window;
@@ -51,6 +51,7 @@ udpSocket asock;
 void reloadConfig() {
 	XPLMDebugString("reloadConfig\n");
   readConfig();
+	sendConfigReset();
 }
 
 PLUGIN_API int XPluginStart(
@@ -71,18 +72,19 @@ PLUGIN_API int XPluginStart(
 	// Note on "dummy" handlers:
 	// Even if we don't want to handle these events, we have to register a "do-nothing" callback for them
 	params.handleMouseClickFunc = dummy_mouse_handler;
-	params.handleRightClickFunc = dummy_mouse_handler;
+	//
 	params.handleMouseWheelFunc = dummy_wheel_handler;
 	params.handleKeyFunc = dummy_key_handler;
 	params.handleCursorFunc = dummy_cursor_status_handler;
 	params.refcon = NULL;
-	params.layer = xplm_WindowLayerFloatingWindows;
+	//
 	// Opt-in to styling our window like an X-Plane 11 native window
 	// If you're on XPLM300, not XPLM301, swap this enum for the literal value 1.
-  #ifndef XPLM301
-	  params.decorateAsFloatingWindow = 1;
-  #else
-    params.decorateAsFloatingWindow = xplm_WindowDecorationRoundRectangle;
+  #ifdef XPLM301
+	params.handleRightClickFunc = dummy_mouse_handler;
+
+	params.layer = xplm_WindowLayerFloatingWindows;
+  params.decorateAsFloatingWindow = xplm_WindowDecorationRoundRectangle;
   #endif
 	// Set the window's initial bounds
 	// Note that we're not guaranteed that the main monitor's lower left is at (0, 0)...
