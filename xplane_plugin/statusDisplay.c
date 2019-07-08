@@ -23,6 +23,7 @@ void drawStatus(XPLMWindowID inWindowID, void *inRefcon) {
 	float aqua[] = {0.4, 0.5, 0.8};
 	float white[] = {1.0, 1.0, 1.0};
 	float *color;
+  int lineSpacing = 16;
 
 	XPLMGetWindowGeometry(inWindowID, &left, &top, &right, &bottom);
 	XPLMDrawTranslucentDarkBox(left, top, right, bottom);
@@ -39,7 +40,7 @@ void drawStatus(XPLMWindowID inWindowID, void *inRefcon) {
 		XPLMDrawString(color, left + 5, y, str, NULL, xplmFont_Basic);
 		if (n == 0) n = LINES;
 		n--;
-		y += 18;
+		y += lineSpacing;
 	}
 }
 
