@@ -2,6 +2,7 @@
 #include "udp.h"
 #include "pins.h"
 #include "rs232.h"
+#include "statusDisplay.h"
 // Downloaded from https://developer.x-plane.com/code-sample/hello-world-sdk-3/
 
 
@@ -39,9 +40,10 @@ int readEthernetConfig( char* ip, int* port);
 static XPLMDataRef		gDataRef = NULL;
 static XPLMDataRef		testDataRef = NULL;
 
-int TeensyControls_show=0;
+int TeensyControls_show = 0;
+int statusDisplayShow = 0;
 int cport_nr=16;        /* /dev/ttyS0 (COM1 on windows) */
-int bdrate=115200;       /* 9600 baud */
+int bdrate=115200;       /* 115200 baud */
 
 int slaveId = 0;
 float signal = 0.0;
@@ -143,6 +145,11 @@ PLUGIN_API int XPluginStart(
 						1);
 	XPLMAppendMenuItem(
 						myMenu,
+						"Show input status",
+						(void *) 5,
+						1);
+	XPLMAppendMenuItem(
+						myMenu,
 						"Send config",
 						(void *) 4,
 						1);
@@ -152,9 +159,12 @@ PLUGIN_API int XPluginStart(
 	gDataRef = XPLMFindDataRef("sim/cockpit/switches/pitot_heat_on");
   testDataRef = XPLMFindDataRef("sim/joystick/yoke_roll_ratio");
 
-  TeensyControls_show = 1;
+  TeensyControls_show = 0;
+
   TeensyControls_display_init();
   display("started openSimIO");
+
+	statusDisplayInit();
 
   XPLMDebugString("read config");
 
@@ -250,6 +260,14 @@ void	MyMenuHandlerCallback(void* inMenuRef, void* inItemRef) {
 	if( inItemRef == 4) {
 		reloadConfig();
 		sendConfigReset();
+	}
+	if( inItemRef == 5) {
+		if (statusDisplayShow == 0) {
+			statusDisplayShow = 1;
+		}else {
+			statusDisplayShow = 0;
+		}
+		statusDisplayToggle();
 	}
 	/* This is our handler for the menu item.  Our inItemRef is the refcon
 	 * we registered in our XPLMAppendMenuItem calls.  It is either +1000 or
@@ -441,6 +459,10 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
   char out[10] = "*";
   sendUDP(asock, out, sizeof(out));
 
+
+	if (statusDisplayShow == 1) {
+		drawStatusDisplayInfo();
+	}
 	/* Write the data to a file. */
 	// display("Time=%f.\n",elapsed);
 
