@@ -32,6 +32,9 @@
 // Use TM1637 drivers fopr 7 segment displays
 #define TM1637
 
+// Servo
+#define SERVO
+
 // ############
 // End of plugins
 // ############
@@ -61,6 +64,10 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 #ifdef TM1637
 #include "tm1637functions.h"
+#endif
+
+#ifdef SERVO
+#include "servo.h"
 #endif
 
 int myId = 0; // this will automaticly be set by the chain ping loop

@@ -73,7 +73,7 @@ void loopEthernet() {
       //Serial.println("clear to send!");
       cts = true;
     } else if (packetBuffer[0] == '{') {
-      Serial.println(packetBuffer);
+//      Serial.println(packetBuffer);
       // find out what type of message
       char substr[10];
       int current = 1;
@@ -90,9 +90,9 @@ void loopEthernet() {
 //      Serial.println(substr);
       current = getNextSubStr(packetBuffer, substr, current, ';');
       int what = atoi(substr);
-      Serial.print("what:");
-      Serial.println(what);
-      Serial.println(substr);
+//      Serial.print("what:");
+//      Serial.println(what);
+//      Serial.println(substr);
       if (what == 1 || what == 2) {
         unconfigured = false;
         // set config

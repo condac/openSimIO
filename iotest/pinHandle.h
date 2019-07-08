@@ -179,6 +179,14 @@ void setupPins(int configArray[], int numberOfPins) {
       pinMode(pinsExtra[i], OUTPUT);
       break;
 #endif
+#ifdef SERVO
+    case AO_SERVO:    // 
+      setupServo(i);
+
+      break;
+#endif
+
+  
     }
   }
 }
@@ -201,6 +209,11 @@ void setValue(int pin, int val) {
 #ifdef TM1637
     case DO_TM1637_DEC:    // 
       setTM1637dec(pin,val);
+      break;
+#endif
+#ifdef SERVO
+    case AO_SERVO:    // 
+      setServo(pin,val);
       break;
 #endif
     }
