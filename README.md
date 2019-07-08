@@ -8,6 +8,12 @@ The program is in very early development. Only the basic functions of digital in
 * Digital input, on/off switch and push and hold to inc/dec value
 * Analog input
 
+## Installation
+* Download and unzip the latest release zip file with the x-plane plugin in your xplane plugins folder (X-Plane 11/Resources/plugins)
+* Create a config file (X-Plane 11/Resources/plugins/openSimIO/config.txt) (TODO create example config)
+* Download and install Arduino program if you do not have it. ( It is needed to compile and upload firmware to your arduino)
+* Download the latest source code in the master branch. There you find the iotest arduino project.
+* Select the right arduino board and upload the program to your arduino.
 
 
 ## Goals
