@@ -18,8 +18,11 @@
 # Servo test
 1.0.D8;132;0;1.0;0;0;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;1;3;
 
-#PWM test
+# PWM test
 1.0.D11;130;0;1.0;0;0;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;1;3;
+
+# Rotary test
+1.0.D22;10;0;10.0;0;0;sim/cockpit/radios/com1_freq_hz;0;1;23; ## Extra pin not used it will always use pin+1 as extra
 
 
 # SK60
@@ -28,7 +31,7 @@
 1.0.A3;4;0;530;220;850;sim/joystick/yoke_heading_ratio;-1.0;1.0;0;
 
 #skevroder
-1.0.A2;4;1;570;64;1019;sim/joystick/yoke_roll_ratio;-1.0;1.0;0;
+1.0.A2;6;1;570;64;1019;sim/joystick/yoke_roll_ratio;-1.0;1.0;0;
 
 #höjdroder
 1.0.A1;4;1;891;12;1024;sim/joystick/yoke_pitch_ratio;-1.0;1.0;0;

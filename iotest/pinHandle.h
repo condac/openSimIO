@@ -19,6 +19,17 @@ void readAnalogPinRaw( int pin) {
   
   int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
   
+  if (currentState != pinsData[pin]) {
+    pin_changed[pin] = CHANGE_COUNT;
+    pinsData[pin] = currentState;
+  }
+}
+
+void readAnalogPinFilter( int pin) {
+  // Use average filter and a little deadband
+  int deadband = 10;
+  int filter = 5;
+  int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
   analogFilter[pin-DIGITAL_PIN_COUNT][analogFilter2[pin-DIGITAL_PIN_COUNT]] = currentState;
   long sum = 0;
   for (int i=0;i<10;i++) {
@@ -38,20 +49,36 @@ void readAnalogPinRaw( int pin) {
 //  Serial.print("currentState ");
 //  Serial.println(currentState);
   currentState = sum;
-  if (currentState != pinsData[pin]) {
+  
+  if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
     pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
 }
-
-void readAnalogPinFilter( int pin) {
-  // Use average filter and a little deadband
-  int deadband = 10;
-  int filter = 5;
-  int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
-  currentState = (pinsData[pin]*(filter+1) + currentState)/(filter+2);
+void readAnalogPinOverSample( int pin) {
   
-  if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
+  int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
+  
+  analogFilter[pin-DIGITAL_PIN_COUNT][analogFilter2[pin-DIGITAL_PIN_COUNT]] = currentState;
+  long sum = 0;
+  for (int i=0;i<10;i++) {
+    int test = analogFilter[pin-DIGITAL_PIN_COUNT][i];
+    sum = sum + test;
+//    Serial.print(",");
+//    Serial.print(test);
+  }
+  analogFilter2[pin-DIGITAL_PIN_COUNT]++;
+  if (analogFilter2[pin-DIGITAL_PIN_COUNT] > 10) {
+    analogFilter2[pin-DIGITAL_PIN_COUNT] = 0;
+  }
+  
+  //sum = sum /10;
+//  Serial.print("sum ");
+//  Serial.print(sum);
+//  Serial.print("currentState ");
+//  Serial.println(currentState);
+  currentState = sum;
+  if (currentState != pinsData[pin]) {
     pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
@@ -105,6 +132,9 @@ void handlePins(int pinArray[], int numberOfPins) {
     case AI_FILTER:    // Analog filtered value
       readAnalogPinFilter(i);
       break;
+    case AI_OVERSAMPLE:    // Analog 10 times and add the sum value
+      readAnalogPinOverSample(i);
+      break;
     #ifdef ROTARY_ENCODER
     case DI_ROTARY_ENCODER_TYPE1:    // same as with pullup, only setup initiation is different
       getRotationType1(i, i+1); // getRotation returns true if changed
@@ -144,6 +174,15 @@ void setupPins(int configArray[], int numberOfPins) {
       break;
     case DI_INPUT_STEP:    // 
       pinMode(i, INPUT_PULLUP);
+      break;
+    case AI_RAW:    // 
+      pinMode(i, INPUT);
+      break;
+    case AI_FILTER:    // 
+      pinMode(i, INPUT);
+      break;
+    case AI_OVERSAMPLE:    // 
+      pinMode(i, INPUT);
       break;
     case DO_HIGH:    // just set the pin to 5v
       pinMode(i, OUTPUT);

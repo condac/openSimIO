@@ -275,7 +275,7 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
   }
   return out;
 }
-void setAnalogData(int i, int value) {
+void setAnalogData(int i, float value) {
 	pins[i].prevValue = value;
   //display("setAnalogData ");
 
@@ -547,8 +547,11 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 						case AI_FILTER:    //
 							setAnalogData(i, var);
 							break;
+						case AI_OVERSAMPLE:    //
+							setAnalogData(i, ((float)var)/10);
+							break;
 						case DI_ROTARY_ENCODER_TYPE1:    //
-							setDigitalData(i, var);
+							setDigitalData(i, var * pins[i].center);
 							break;
 						case DI_3WAY_2:    //
               //XPLMDebugString("3way switch\n");
@@ -639,6 +642,10 @@ void sendDataToUDP(udpSocket sock) {
 void drawStatusDisplayInfo() {
 	statusClear();
 	for (int i=0;i<nrOfPins;i++) {
-		statusPrintf("%s = %d -> %s=%f \n", pins[i].pinNameString, pins[i].prevValue, pins[i].dataRefString, pins[i].lastSimValue);
+		if (pins[i].output == 1) {
+			statusPrintf("%s = %d <- %s=%f \n", pins[i].pinNameString, pins[i].prevValue, pins[i].dataRefString, pins[i].lastSimValue);
+		} else {
+			statusPrintf("%s = %d -> %s=%f \n", pins[i].pinNameString, pins[i].prevValue, pins[i].dataRefString, pins[i].lastSimValue);
+		}
 	}
 }
