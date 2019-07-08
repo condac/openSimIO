@@ -155,7 +155,10 @@ void setupPins(int configArray[], int numberOfPins) {
       break;  
     case DO_BOOL:    // set outputmode 
       pinMode(i, OUTPUT);
-      break;         
+      break;  
+    case AO_PWM:    // set outputmode 
+      pinMode(i, OUTPUT);
+      break;
     case DI_ROTARY_ENCODER_TYPE1:    // same as with pullup, only setup initiation is different
       pinMode(i, INPUT_PULLUP);
       pinMode(i+1, INPUT_PULLUP);
@@ -206,6 +209,10 @@ void setValue(int pin, int val) {
     case DO_BOOL:    // 
       digitalWrite(pin,val);
       break;
+    case AO_PWM:    // 
+      analogWrite(pin,val);
+      break;
+      
 #ifdef TM1637
     case DO_TM1637_DEC:    // 
       setTM1637dec(pin,val);

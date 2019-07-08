@@ -7,72 +7,82 @@
 
 /192.168.0.105 34555/ # this tells it to use ethernet for the moment
 
-1.0.D5;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
-1.0.D6;1;0;0;0;0;sim/cockpit/electrical/beacon_lights_on;0;1;0;
-1.0.D7;1;0;0;0;0;sim/cockpit/electrical/nav_lights_on;0;1;0;
 
 1.0.D13;129;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
-1.1.D13;129;0;0;0;0;sim/cockpit/electrical/taxi_light_on;0;1;0;
-1.2.D13;129;0;0;0;0;sim/cockpit/electrical/nav_lights_on;0;1;0;
+1.0.D2;135;0;1.0;0;0;sim/cockpit2/gauges/indicators/compass_heading_deg_mag;0;1;3;
 
-1.0.A0;4;1;680;400;970;sim/joystick/yoke_roll_ratio;-1.0;1.0;0;
-1.1.A1;4;1;500;100;900;sim/joystick/yoke_pitch_ratio;-1.0;1.0;0;
-1.2.A2;4;0;500;100;900;sim/joystick/yoke_heading_ratio;-1.0;1.0;0;
+# set electric pins for display
+1.0.D4;134;0;1.0;0;0;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;1;0;
+1.0.D5;133;0;1.0;0;0;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;1;0;
 
-1.0.D30;15;0;15;0;30;sim/flightmodel/controls/flaprqst;0.0;1.0;34;
+# Servo test
+1.0.D8;132;0;1.0;0;0;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;1;3;
+
+#PWM test
+1.0.D11;130;0;1.0;0;0;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;1;3;
+
 
 # SK60
 ## kabel1
 #sidroder
-1.0.A3;4;0;500;100;900;sim/joystick/yoke_heading_ratio;-1.0;1.0;0;
+1.0.A3;4;0;530;220;850;sim/joystick/yoke_heading_ratio;-1.0;1.0;0;
 
 #skevroder
-1.0.A2;4;0;500;100;900;sim/joystick/yoke_roll_ratio;-1.0;1.0;0;
+1.0.A2;4;1;570;64;1019;sim/joystick/yoke_roll_ratio;-1.0;1.0;0;
 
 #höjdroder
-1.0.A1;4;0;500;100;900;sim/joystick/yoke_pitch_ratio;-1.0;1.0;0;
+1.0.A1;4;1;891;12;1024;sim/joystick/yoke_pitch_ratio;-1.0;1.0;0;
+
 
 #gas höger
-1.0.A4;4;0;700;0;1000;sim/flightmodel/engine/ENGN_thro[1];0.0;1.0;0;
+1.0.A4;4;0;500;3;1018;sim/cockpit2/engine/actuators/throttle_ratio_all;0.0;1.0;0;
 
 #gas vänster
-1.0.A5;4;0;640;0;1000;sim/flightmodel/engine/ENGN_thro[0];0.0;1.0;0;
+#1.0.A5;4;0;500;3;1018;sim/cockpit2/engine/actuators/throttle_ratio[0];0.0;1.0;0;
 
+# alternativ till gas sim/cockpit2/engine/actuators/throttle_ratio[]
 # variabel för all gas: sim/cockpit2/engine/actuators/throttle_ratio_all
 
 #höjdrodstrim
-1.0.D30;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
-1.0.D31;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
+1.0.D30;3;0;0.1;0;0;sim/flightmodel/controls/elv_trim;-1.0;1.0;0;
+1.0.D31;3;1;0.1;0;0;sim/flightmodel/controls/elv_trim;-1.0;1.0;0;
 
 ## kabel2
 #noshjul
-1.0.A0;4;0;500;100;900;sim/flightmodel2/gear/tire_steer_command_deg[0];-1.0;1.0;0;
+#1.0.A0;4;1;570;64;944;sim/flightmodel2/gear/tire_steer_command_deg[0];-90.0;90.0;0;
 
 ## Luftbroms
 #ut
-1.0.D35;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
+1.0.D35;3;0;0.5;0;0;sim/cockpit2/controls/speedbrake_ratio;0;1;0;
 #in
-1.0.D34;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
+1.0.D34;3;1;0.5;0;0;sim/cockpit2/controls/speedbrake_ratio;0;1;0;
 
 #klaff specialfunktion för 2 pinnar
-1.0.D39;15;0;0;0;45;sim/flightmodel/controls/flaprqst;0.0;1.0;38;
+1.0.D39;15;0;22.5;0;45;sim/flightmodel/controls/flaprqst;0.0;1.0;38;
 
 #avtryckare
 1.0.D43;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
 
 #broms höger
-1.0.D42;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
+1.0.D42;1;0;0.5;0;1;sim/cockpit2/controls/right_brake_ratio;0;1;0;
 #broms vänster
-1.0.D47;1;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;1;0;
+1.0.D47;1;0;0.5;0;1;sim/cockpit2/controls/left_brake_ratio;0;1;0;
 
 # nav ljus
 1.0.D46;1;0;0;0;0;sim/cockpit/electrical/nav_lights_on;0;1;0;
 
 # strob ljus
-1.0.D51;1;0;0;0;0;sim/cockpit/electrical/strobe_lights_on;0;1;0;
+1.0.D49;1;0;0;0;0;sim/cockpit/electrical/strobe_lights_on;0;1;0;
 
 # taxi ljus
-1.0.D50;1;0;0;0;0;sim/cockpit/electrical/taxi_light_on;0;1;0;
+1.0.D48;1;0;0;0;0;sim/cockpit/electrical/taxi_light_on;0;1;0;
 
 # landnings ljus
-1.0.D53;1;0;0;0;0;sim/cockpit/electrical/landing_lights_on;0;1;0;
+1.0.D45;1;0;0;0;0;sim/cockpit/electrical/landing_lights_on;0;1;0;
+
+# För 2 motorig proppellerplan
+#1.0.A6;4;0;500;3;1018;sim/cockpit2/engine/actuators/mixture_ratio[1];0.0;1.0;0;
+#1.0.A7;4;0;500;3;1018;sim/cockpit2/engine/actuators/mixture_ratio[0];0.0;1.0;0;
+
+1.0.A8;4;0;500;3;1018;sim/cockpit2/engine/actuators/prop_rotation_speed_rad_sec[0];0.0;300.0;0;
+1.0.A9;4;0;500;3;1018;sim/cockpit2/engine/actuators/prop_rotation_speed_rad_sec[0];0.0;300.0;0;
