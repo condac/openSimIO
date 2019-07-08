@@ -122,6 +122,18 @@ void loopEthernet() {
         
       } else if (what == 0) {
         // set value
+        
+        current = getNextSubStr(packetBuffer, substr, current, '=');
+        int pinNr = atoi(substr+1);
+        if (substr[0] == 'A') {
+          pinNr = pinNr+DIGITAL_PIN_COUNT;
+        }
+        current = getNextSubStr(packetBuffer, substr, current, ';');
+        int value = atoi(substr);
+        setValue(pinNr, value);
+//        Serial.print("set value:");
+//        Serial.println(substr);
+        
       }
       
       

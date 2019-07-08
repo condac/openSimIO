@@ -171,8 +171,14 @@ void setupPins(int configArray[], int numberOfPins) {
 //      digitalWrite(pinsExtra[i]+1,LOW);
       
       configArray[pinsExtra[i]] = NOTUSED;
-      
+  
       break;
+#ifdef TM1637
+    case DO_TM1637_DEC:    // 
+      pinMode(i, OUTPUT);
+      pinMode(pinsExtra[i], OUTPUT);
+      break;
+#endif
     }
   }
 }
@@ -192,7 +198,10 @@ void setValue(int pin, int val) {
     case DO_BOOL:    // 
       digitalWrite(pin,val);
       break;
-    
+#ifdef TM1637
+    case DO_TM1637_DEC:    // 
+      setTM1637dec(pin,val);
+      break;
+#endif
     }
-  
 }

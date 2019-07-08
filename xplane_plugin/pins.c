@@ -614,12 +614,19 @@ void sendDataToUDP(udpSocket sock) {
 
 	for (int i=0;i<nrOfPins;i++) {
 		if (pins[i].output == 1) {
+			if (pins[i].ioMode == DO_HIGH || pins[i].ioMode == DO_LOW) {
+				// do nothing
+				continue;
+			}
 			int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
       if (type == xplmType_Int) {
 
         setDigitalPinEth(sock,i,XPLMGetDatai(pins[i].dataRef) );
       } else if (type == xplmType_Float) {
+				float temp = XPLMGetDataf(pins[i].dataRef);
+				int value = (int)(temp * pins[i].center);
+				setDigitalPinEth(sock,i,value);
 
       } else if (type == xplmType_Double) {
 

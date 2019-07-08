@@ -29,6 +29,8 @@
 // Use ethernet shield
 #define ETHERNET
 
+// Use TM1637 drivers fopr 7 segment displays
+#define TM1637
 
 // ############
 // End of plugins
@@ -55,6 +57,10 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 #ifdef ROTARY_ENCODER
 #include "rotaryEncoder.h"
+#endif
+
+#ifdef TM1637
+#include "tm1637functions.h"
 #endif
 
 int myId = 0; // this will automaticly be set by the chain ping loop
