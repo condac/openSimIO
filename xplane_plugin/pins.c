@@ -5,6 +5,9 @@
 #include "iotypes.h"
 #include "udp.h"
 #include "rs232.h"
+#include "statusDisplay.h"
+#include "iotypes.h"
+
 
 typedef struct  {
 
@@ -49,12 +52,12 @@ pin_struct* lineToStruct( char* line) {
 
   //char pinNameString[10];
 
-  //char dataRefString[512];
+  char modeString[128];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;%d;", &newPin->master,
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%d;", &newPin->master,
                                                                                          &newPin->slave,
                                                                                          &newPin->pinNameString,
-                                                                                         &newPin->ioMode,
+                                                                                         modeString,
                                                                                          &newPin->reverse,
                                                                                          &newPin->center,
                                                                                          &newPin->pinMin,
@@ -63,6 +66,11 @@ pin_struct* lineToStruct( char* line) {
                                                                                          &newPin->xplaneMin,
                                                                                          &newPin->xplaneMax,
 																																											   &newPin->extraInfo  );
+
+  // Translate iomode shtring hhto
+
+	newPin->ioMode =  getTypeFromString(modeString);
+	display("iomode %s %d",modeString, newPin->ioMode  );
   // find index for dataRef
 
   int pos = 0;
@@ -285,7 +293,7 @@ void setAnalogData(int i, float value) {
         int setValue;
         setValue = (int) value;
 
-        XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+        XPLMSetDatai(pins[i].dataRef,setValue);
 				pins[i].lastSimValue = setValue;
       } else if (type == xplmType_IntArray) {
         int setValue[1];
@@ -314,7 +322,7 @@ void setAnalogData(int i, float value) {
 
 }
 void setRawDataF(int i, float value) {
-  display("setRawDataF %f", value);
+  //display("setRawDataF %f", value);
 
       int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
@@ -322,7 +330,7 @@ void setRawDataF(int i, float value) {
         int setValue;
         setValue = (int) value;
 
-        XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+        XPLMSetDatai(pins[i].dataRef,setValue);
 				pins[i].lastSimValue = setValue;
       } else if (type == xplmType_IntArray) {
         int setValue[1];
@@ -370,7 +378,7 @@ float getRawDataF(int i) {
         XPLMGetDatavf(pins[i].dataRef,readValue, pins[i].dataRefIndex, 1);
 				return readValue[0];
       }
-
+	return -1;
 }
 
 void setTimeStep(float in) {

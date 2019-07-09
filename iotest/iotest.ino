@@ -44,7 +44,9 @@
 #include "common.h"
 
 String type = BOARD;
-#define TIME_DEBUG 
+
+// Show debug stuff
+//#define TIME_DEBUG 
 
 
 #include <avr/wdt.h> // Watchdog interupt // 20 bytes for setup and 2 bytes for each reset, no memory
