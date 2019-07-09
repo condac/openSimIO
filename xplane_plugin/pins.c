@@ -16,10 +16,12 @@ typedef struct  {
   int ioMode;
   XPLMDataRef dataRef;
   int dataRefIndex;
+	int pinExtra;
   float pinMin;
   float pinMax;
   float xplaneMin;
   float xplaneMax;
+	float xplaneExtra;
   float center;
   int reverse;
   int pinNr;
@@ -29,7 +31,6 @@ typedef struct  {
 	int prevValue;
 	float prevValueF;
 	float lastSimValue;
-	int extraInfo;
 
 } pin_struct;
 
@@ -54,9 +55,10 @@ pin_struct* lineToStruct( char* line) {
 
   char modeString[128];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%d;", &newPin->master,
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%f;", &newPin->master,
                                                                                          &newPin->slave,
                                                                                          &newPin->pinNameString,
+																																												 &newPin->pinExtra,
                                                                                          modeString,
                                                                                          &newPin->reverse,
                                                                                          &newPin->center,
@@ -65,12 +67,12 @@ pin_struct* lineToStruct( char* line) {
                                                                                          &newPin->dataRefString,
                                                                                          &newPin->xplaneMin,
                                                                                          &newPin->xplaneMax,
-																																											   &newPin->extraInfo  );
+																																											   &newPin->xplaneExtra  );
 
-  // Translate iomode shtring hhto
-
+  // Translate iomode from string to int
 	newPin->ioMode =  getTypeFromString(modeString);
-	display("iomode %s %d",modeString, newPin->ioMode  );
+	//display("iomode %s %d",modeString, newPin->ioMode  );
+
   // find index for dataRef
 
   int pos = 0;
@@ -586,7 +588,7 @@ void sendConfigToArduino(int cport_nr) {
     int i = sendcount;
     sendcount++;
     //{1;2;0;D3,1,0;A2,5,3;}
-    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
+    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
     display("write serial:%s", out);
     RS232_SendBuf(cport_nr, out, len+1);
   }
@@ -599,7 +601,7 @@ void sendConfigToEth(udpSocket sock) {
     int i = sendcount;
     sendcount++;
     //{1;2;0;D3,1,0;A2,5,3;}
-    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
+    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
     display("write udp:%s", out);
 		sendUDP(sock, out, len+1);
     //RS232_SendBuf(cport_nr, out, len+1);
