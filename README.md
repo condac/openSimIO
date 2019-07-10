@@ -22,3 +22,6 @@ The goal with this project is to create a hardware layer that can chain multiple
 I also want to keep the code simple to make it easy for hoppyist like my self to contribute to this project. Code readability is prefered over performance in the early phase of this project.
 
 The Arduinos should relay the information back to the PC without doing anything with the information to make things simple in the Arduino parts and to save on program memory. If for example a analog value need to be trimmed or calibrated it should be done in the plugin that relay the information to the game or software on the PC side.
+
+## Questions or suggestions
+Feel free to open a issue for anything from questions to feature requests. 
