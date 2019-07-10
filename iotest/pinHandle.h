@@ -109,6 +109,46 @@ void read3way_2( int pin, int extra) {
   }
   
 }
+void read4x4(int pin) {
+  int newValue = 0;
+  // put your main code here, to run repeatedly:
+  for (int i = 0; i < 4; i++) {
+    bool colSet[4] = {HIGH,HIGH,HIGH,HIGH};
+    colSet[i] = LOW;
+    digitalWrite(pin+4,colSet[0]);
+    digitalWrite(pin+5,colSet[1]);
+    digitalWrite(pin+6,colSet[2]);
+    digitalWrite(pin+7,colSet[3]);
+    colSet[i] = HIGH;
+    bool row0 = digitalRead(pin+0);
+    bool row1 = digitalRead(pin+1);
+    bool row2 = digitalRead(pin+2);
+    bool row3 = digitalRead(pin+3);
+    
+    if(row0 && !row1 ){
+          //Serial.print(1+i*4);
+          newValue = 1+i*4;
+    }else if(row1 && !row2){
+          //Serial.print(2+i*4);
+          newValue = 2+i*4;
+    }else if(row2 && !row3){
+          //Serial.print(3+i*4);
+          newValue = 3+i*4;
+    }else if(row3 && !row0){
+          //Serial.print(4+i*4);
+          newValue = 4+i*4;
+    }else{;}
+  }
+ 
+  
+  if (pinsData[pin] != newValue) {
+    pinsData[pin] = newValue;
+    pin_changed[pin] = CHANGE_COUNT;
+    Serial.print("4x4: ");
+    Serial.println(newValue);
+  }
+}
+
 
 void handlePins(int pinArray[], int numberOfPins) {
 
@@ -142,6 +182,10 @@ void handlePins(int pinArray[], int numberOfPins) {
     #endif
     case DI_3WAY_2:    // 
       read3way_2(i, pinsExtra[i]);
+      break;
+      
+    case DI_4X4:    // 
+      read4x4(i);
       break;
     }
   }
@@ -227,7 +271,27 @@ void setupPins(int configArray[], int numberOfPins) {
 
       break;
 #endif
+    case DI_4X4:    // 
 
+      //Make row pins input
+      pinMode(i, INPUT_PULLUP);
+      pinMode(i+1, INPUT_PULLUP);
+      pinMode(i+2, INPUT_PULLUP);
+      pinMode(i+3, INPUT_PULLUP);
+      pinMode(i+4, OUTPUT);
+      pinMode(i+5, OUTPUT);
+      pinMode(i+6, OUTPUT);
+      pinMode(i+7, OUTPUT);
+      
+      configArray[i+1] = NOTUSED;
+      configArray[i+2] = NOTUSED;
+      configArray[i+3] = NOTUSED;
+      configArray[i+4] = NOTUSED;
+      configArray[i+5] = NOTUSED;
+      configArray[i+6] = NOTUSED;
+      configArray[i+7] = NOTUSED;
+      
+      break;
   
     }
   }

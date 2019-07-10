@@ -91,6 +91,9 @@ long frametime;
 long pingtime;
 #define PING_INTERVAL 5000
 
+long refreshtime;
+#define REFRESH_INTERVAL 1000 // refresh interval
+
 #ifdef TIME_DEBUG
 long looptime;
 long ditime;
@@ -130,6 +133,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
+  pinsConfig[2] = DI_4X4;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
@@ -188,9 +192,12 @@ void loop() {
     #else
     sendData();
     #endif
+    //cyclicRefresh();
+  }
+  if (millis()>refreshtime) {
+    refreshtime = millis() + REFRESH_INTERVAL; 
     cyclicRefresh();
   }
-
   if (millis()>pingtime) {
     pingtime = millis() + PING_INTERVAL; 
     ping();
