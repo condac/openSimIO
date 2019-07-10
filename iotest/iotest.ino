@@ -133,7 +133,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  pinsConfig[2] = DI_4X4;
+  //pinsConfig[2] = DI_4X4;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
@@ -147,8 +147,8 @@ void setup() {
   pinsConfig[DIGITAL_PIN_COUNT+5] = AI_FILTER;
   
   pinsConfig[13] = DO_BOOL;*/
-  pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
-  pinsConfig[DIGITAL_PIN_COUNT+2] = AI_RAW;
+  //pinsConfig[DIGITAL_PIN_COUNT+1] = AI_FILTER;
+  //pinsConfig[DIGITAL_PIN_COUNT+0] = AI_FILTER;
   pcSerial.println("boot2");
   
   setupDigitalPins();
@@ -614,7 +614,10 @@ void saveConfig() {
   // TODO
 }
 void relayToPC() {
-  // message to PC from slave
+  #ifdef ETHERNET 
+  relayToPCEth(); // in network.h
+  #else
+  // message to PC from slave via serial
   char data;
   
   pcSerial.print("{99;");
@@ -632,7 +635,7 @@ void relayToPC() {
   // end of message
   pcSerial.println(data);
   return;
-
+  #endif
 }
 
 void cyclicRefresh() {

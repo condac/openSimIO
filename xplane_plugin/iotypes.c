@@ -36,6 +36,7 @@ int getTypeFromString(char* string) {
   if (strcmp(string, "DI_3WAY_2") == 0) { return 15;}
   //#define DO_TM1637_DEC 135 // Display decimal number
   if (strcmp(string, "DO_TM1637_DEC") == 0) { return 135;}
-
+  //#define DI_4X4 16 // 4x4 key matrix
+  if (strcmp(string, "DI_4X4") == 0) { return 16;}
   return 0;
 }

@@ -79,63 +79,72 @@ void loopEthernet() {
       int current = 1;
 
       current = getNextSubStr(packetBuffer, substr, current, ';');
+      int masterPos = current;
       int master = atoi(substr);
 //      Serial.print("master:");
 //      Serial.println(master);
 //      Serial.println(substr);
       current = getNextSubStr(packetBuffer, substr, current, ';');
       int slave = atoi(substr);
-//      Serial.print("slave:");
-//      Serial.println(slave);
-//      Serial.println(substr);
-      current = getNextSubStr(packetBuffer, substr, current, ';');
-      int what = atoi(substr);
-//      Serial.print("what:");
-//      Serial.println(what);
-//      Serial.println(substr);
-      if (what == 1 || what == 2) {
-        unconfigured = false;
-        // set config
-        current = getNextSubStr(packetBuffer, substr, current, ',');
-        int pinNr = atoi(substr+1);
-        if (substr[0] == 'A') {
-          pinNr = pinNr+DIGITAL_PIN_COUNT;
-        }
-//        Serial.print("pinNr:");
-//        Serial.println(pinNr);
-//        Serial.println(substr);
-        current = getNextSubStr(packetBuffer, substr, current, ',');
-        int pinmode = atoi(substr);
-//        Serial.print("pinmode:");
-//        Serial.println(pinmode);
-//        Serial.println(substr);
+      if (slave != myId) {
+        // Slaves do not expect the master id so we need to remove it. 
+        chainSerial.print("{");
+        chainSerial.println(packetBuffer+masterPos);
+        pcSerial.print("chain forward:");
+        pcSerial.println(packetBuffer+masterPos);
+      }else {
+        
+  //      Serial.print("slave:");
+  //      Serial.println(slave);
+  //      Serial.println(substr);
         current = getNextSubStr(packetBuffer, substr, current, ';');
-        int pinExtra = atoi(substr);
-//        Serial.print("pinExtra:");
-//        Serial.println(pinExtra);
-//        Serial.println(substr);
-        
-        setConfig(pinNr, pinmode, pinExtra);
-        //wdt_reset();
-        setupAllPins();
-        //wdt_reset();
-        
-      } else if (what == 0) {
-        // set value
-        
-        current = getNextSubStr(packetBuffer, substr, current, '=');
-        int pinNr = atoi(substr+1);
-        if (substr[0] == 'A') {
-          pinNr = pinNr+DIGITAL_PIN_COUNT;
+        int what = atoi(substr);
+  //      Serial.print("what:");
+  //      Serial.println(what);
+  //      Serial.println(substr);
+        if (what == 1 || what == 2) {
+          unconfigured = false;
+          // set config
+          current = getNextSubStr(packetBuffer, substr, current, ',');
+          int pinNr = atoi(substr+1);
+          if (substr[0] == 'A') {
+            pinNr = pinNr+DIGITAL_PIN_COUNT;
+          }
+  //        Serial.print("pinNr:");
+  //        Serial.println(pinNr);
+  //        Serial.println(substr);
+          current = getNextSubStr(packetBuffer, substr, current, ',');
+          int pinmode = atoi(substr);
+  //        Serial.print("pinmode:");
+  //        Serial.println(pinmode);
+  //        Serial.println(substr);
+          current = getNextSubStr(packetBuffer, substr, current, ';');
+          int pinExtra = atoi(substr);
+  //        Serial.print("pinExtra:");
+  //        Serial.println(pinExtra);
+  //        Serial.println(substr);
+          
+          setConfig(pinNr, pinmode, pinExtra);
+          //wdt_reset();
+          setupAllPins();
+          //wdt_reset();
+          
+        } else if (what == 0) {
+          // set value
+          
+          current = getNextSubStr(packetBuffer, substr, current, '=');
+          int pinNr = atoi(substr+1);
+          if (substr[0] == 'A') {
+            pinNr = pinNr+DIGITAL_PIN_COUNT;
+          }
+          current = getNextSubStr(packetBuffer, substr, current, ';');
+          int value = atoi(substr);
+          setValue(pinNr, value);
+  //        Serial.print("set value:");
+  //        Serial.println(substr);
+          
         }
-        current = getNextSubStr(packetBuffer, substr, current, ';');
-        int value = atoi(substr);
-        setValue(pinNr, value);
-//        Serial.print("set value:");
-//        Serial.println(substr);
-        
       }
-      
       
     }
     else {
@@ -225,6 +234,30 @@ void sendDataEth() {
   //Udp.flush();
 }
 
-
+void relayToPCEth() {
+  // message to PC from slave via ethernet
+  char data;
+  char strbuf[32];
+  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+  
+  Udp.write("{99;");
+  itoa(MASTER_ID,strbuf,10);
+  Udp.write(strbuf);
+  //Udp.write(MASTER_ID); // add master id
+  //Udp.write(""); 
+  while (chainSerial.available() <= 0) {}
+  data = chainSerial.read();
+  while (data != '}') {
+    Udp.write(data);
+    while (chainSerial.available() <= 0) {
+      
+    }
+    data = chainSerial.read();
+  }
+  // end of message
+  Udp.write(data);
+  Udp.endPacket();
+  return;
+}
 
 #endif // ETHERNET

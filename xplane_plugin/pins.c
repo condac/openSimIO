@@ -100,7 +100,7 @@ pin_struct* lineToStruct( char* line) {
   }
 
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
-  if(conversionCount != 12) {
+  if(conversionCount != 13) {
       display("Error! converting config line %s", line);
       return NULL;
   } else {
@@ -399,7 +399,7 @@ void setStepData(int pin, int value) {
 
 void setStepLoop() {
 	for (int i=0;i<nrOfPins;i++) {
-		if (pins[i].ioMode == DI_INPUT_STEP) {
+		if (pins[i].ioMode == DI_INPUT_STEP || (pins[i].ioMode == DI_4X4 && pins[i].xplaneExtra == 2)) {
 			if (pins[i].prevValue == 1) {
 			// increse step while holding button based on time elapsed
 			// the center value in configuration is the steps per second we want to create
@@ -566,6 +566,52 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 						case DI_3WAY_2:    //
               //XPLMDebugString("3way switch\n");
 							setAnalogData(i, var);
+							break;
+						case DI_4X4:    //
+							// this might go in its own function, but then we cant use the continue to go forward in the for loop
+							if (pins[i].xplaneExtra == 0) {
+								if (pins[i].pinExtra == var) {
+									setDigitalData(i, 1);
+								} else if(var == 0) {
+									setDigitalData(i, 0);
+									continue;
+								} else {
+									continue;
+								}
+							} else if (pins[i].xplaneExtra == 1) {
+								// toggle data
+								if (pins[i].pinExtra == var) {
+									if (pins[i].prevValue == 0) {
+										pins[i].prevValue = 1;
+										float current = getRawDataF(i);
+										if (current > pins[i].xplaneMin) {
+											setRawDataF(i, pins[i].xplaneMin);
+										} else {
+											setRawDataF(i, pins[i].xplaneMax);
+										}
+
+									}
+
+								} else if(var == 0) {
+									pins[i].prevValue = 0;
+									//setDigitalData(i, 0);
+									continue;
+								} else {
+									continue;
+								}
+							}else if (pins[i].xplaneExtra == 2) {
+								// toggle data
+								if (pins[i].pinExtra == var) {
+									setStepData(i, 1);
+
+								} else if(var == 0) {
+									setStepData(i, 0);
+									continue;
+								} else {
+									continue;
+								}
+							}
+
 							break;
 						}
 					return;
