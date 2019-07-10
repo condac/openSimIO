@@ -4,8 +4,8 @@
 
 
 // Uncomment the master or slave define, never both!
-#define MASTER
-//#define SLAVE
+//#define MASTER
+#define SLAVE
 
 #define MASTER_ID 1 // Change if you have more than one master board in your system
 
@@ -15,7 +15,11 @@
 #define SERIAL_CHAIN
 
 
+#ifdef SLAVE
+#define FRAMERATE 15
+#else
 #define FRAMERATE 60
+#endif
 
 // ############
 // Plugins
@@ -27,7 +31,7 @@
 #define ROTARY_ENCODER
 
 // Use ethernet shield
-#define ETHERNET
+//#define ETHERNET
 
 // Use TM1637 drivers fopr 7 segment displays
 #define TM1637

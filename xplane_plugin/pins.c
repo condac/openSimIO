@@ -15,6 +15,7 @@ typedef struct  {
   int slave;
   int ioMode;
   XPLMDataRef dataRef;
+	XPLMCommandRef commandRef;
   int dataRefIndex;
 	int pinExtra;
   float pinMin;
@@ -115,8 +116,11 @@ pin_struct* lineToStruct( char* line) {
 		newPin->dataRef = XPLMFindDataRef(newPin->dataRefString);
 
     if (newPin->dataRef == NULL)	{
-      display("dataRef invalid %s", newPin->dataRefString);
-      return NULL;
+			newPin->commandRef = XPLMFindCommand(newPin->dataRefString);
+			if (newPin->commandRef == NULL)	{
+	      display("dataRef invalid %s", newPin->dataRefString);
+	      return NULL;
+			}
     }
     return newPin;
 
@@ -542,10 +546,19 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 
 				      break;
 						case DI_INPUT_PULLUP:    //
-							setDigitalData(i, var);
+							if (pins[i].dataRef != NULL) {
+								setDigitalData(i, var);
+							}else if (pins[i].commandRef != NULL) {
+								XPLMCommandOnce(pins[i].commandRef);
+							}
+
 							break;
 						case DI_INPUT_FLOATING:    //
-							setDigitalData(i, var);
+							if (pins[i].dataRef != NULL) {
+								setDigitalData(i, var);
+							}else if (pins[i].commandRef != NULL) {
+								XPLMCommandOnce(pins[i].commandRef);
+							}
 							break;
 						case DI_INPUT_STEP:    //
 							setStepData(i, var);
@@ -583,12 +596,17 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 								if (pins[i].pinExtra == var) {
 									if (pins[i].prevValue == 0) {
 										pins[i].prevValue = 1;
-										float current = getRawDataF(i);
-										if (current > pins[i].xplaneMin) {
-											setRawDataF(i, pins[i].xplaneMin);
-										} else {
-											setRawDataF(i, pins[i].xplaneMax);
+										if (pins[i].dataRef != NULL) {
+											float current = getRawDataF(i);
+											if (current > pins[i].xplaneMin) {
+												setRawDataF(i, pins[i].xplaneMin);
+											} else {
+												setRawDataF(i, pins[i].xplaneMax);
+											}
+										} else if (pins[i].commandRef != NULL) {
+											XPLMCommandOnce(pins[i].commandRef);
 										}
+
 
 									}
 
@@ -648,7 +666,7 @@ void sendConfigToEth(udpSocket sock) {
     sendcount++;
     //{1;2;0;D3,1,0;A2,5,3;}
     int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
-    display("write udp:%s", out);
+    //display("write udp:%s", out);
 		sendUDP(sock, out, len+1);
     //RS232_SendBuf(cport_nr, out, len+1);
   }
@@ -662,7 +680,7 @@ void setDigitalPinEth(udpSocket sock,int pin, int value ) {
 		if (pins[pin].prevValue != value) {
 
 			int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
-			display("write udp:%s", out);
+			//display("write udp:%s", out);
 
     	sendUDP(sock, out, sizeof(out));
 			pins[pin].prevValue = value;
@@ -680,12 +698,31 @@ void sendDataToUDP(udpSocket sock) {
 			int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
       if (type == xplmType_Int) {
-
-        setDigitalPinEth(sock,i,XPLMGetDatai(pins[i].dataRef) );
+				int temp = XPLMGetDatai(pins[i].dataRef);
+        setDigitalPinEth(sock,i, temp);
+				pins[i].lastSimValue = temp;
       } else if (type == xplmType_Float) {
 				float temp = XPLMGetDataf(pins[i].dataRef);
-				int value = (int)(temp * pins[i].center);
-				setDigitalPinEth(sock,i,value);
+				pins[i].lastSimValue = temp;
+				if (temp == pins[i].xplaneMax) {
+					setDigitalPinEth(sock,i,1);
+				} else {
+					setDigitalPinEth(sock,i,0);
+				}
+				//int value = (int)(temp * pins[i].center);
+				//setDigitalPinEth(sock,i,value);
+
+      } else if (type == xplmType_FloatArray) {
+				float readValue[1];
+        XPLMGetDatavf(pins[i].dataRef,readValue, pins[i].dataRefIndex, 1);
+				pins[i].lastSimValue = readValue[0];
+				if (readValue[0] == pins[i].xplaneMax) {
+					setDigitalPinEth(sock,i,1);
+				} else {
+					setDigitalPinEth(sock,i,0);
+				}
+				//int value = (int)(temp * pins[i].center);
+				//setDigitalPinEth(sock,i,value);
 
       } else if (type == xplmType_Double) {
 
