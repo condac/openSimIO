@@ -5,6 +5,9 @@
 #include "iotypes.h"
 #include "udp.h"
 #include "rs232.h"
+#include "statusDisplay.h"
+#include "iotypes.h"
+
 
 typedef struct  {
 
@@ -13,10 +16,12 @@ typedef struct  {
   int ioMode;
   XPLMDataRef dataRef;
   int dataRefIndex;
+	int pinExtra;
   float pinMin;
   float pinMax;
   float xplaneMin;
   float xplaneMax;
+	float xplaneExtra;
   float center;
   int reverse;
   int pinNr;
@@ -26,7 +31,6 @@ typedef struct  {
 	int prevValue;
 	float prevValueF;
 	float lastSimValue;
-	int extraInfo;
 
 } pin_struct;
 
@@ -49,12 +53,13 @@ pin_struct* lineToStruct( char* line) {
 
   //char pinNameString[10];
 
-  //char dataRefString[512];
+  char modeString[128];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%d;%f;%f;%f;%512[^;];%f;%f;%d;", &newPin->master,
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%f;", &newPin->master,
                                                                                          &newPin->slave,
                                                                                          &newPin->pinNameString,
-                                                                                         &newPin->ioMode,
+																																												 &newPin->pinExtra,
+                                                                                         modeString,
                                                                                          &newPin->reverse,
                                                                                          &newPin->center,
                                                                                          &newPin->pinMin,
@@ -62,7 +67,12 @@ pin_struct* lineToStruct( char* line) {
                                                                                          &newPin->dataRefString,
                                                                                          &newPin->xplaneMin,
                                                                                          &newPin->xplaneMax,
-																																											   &newPin->extraInfo  );
+																																											   &newPin->xplaneExtra  );
+
+  // Translate iomode from string to int
+	newPin->ioMode =  getTypeFromString(modeString);
+	//display("iomode %s %d",modeString, newPin->ioMode  );
+
   // find index for dataRef
 
   int pos = 0;
@@ -90,7 +100,7 @@ pin_struct* lineToStruct( char* line) {
   }
 
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
-  if(conversionCount != 12) {
+  if(conversionCount != 13) {
       display("Error! converting config line %s", line);
       return NULL;
   } else {
@@ -275,7 +285,7 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
   }
   return out;
 }
-void setAnalogData(int i, int value) {
+void setAnalogData(int i, float value) {
 	pins[i].prevValue = value;
   //display("setAnalogData ");
 
@@ -285,7 +295,7 @@ void setAnalogData(int i, int value) {
         int setValue;
         setValue = (int) value;
 
-        XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+        XPLMSetDatai(pins[i].dataRef,setValue);
 				pins[i].lastSimValue = setValue;
       } else if (type == xplmType_IntArray) {
         int setValue[1];
@@ -314,7 +324,7 @@ void setAnalogData(int i, int value) {
 
 }
 void setRawDataF(int i, float value) {
-  display("setRawDataF %f", value);
+  //display("setRawDataF %f", value);
 
       int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
@@ -322,7 +332,7 @@ void setRawDataF(int i, float value) {
         int setValue;
         setValue = (int) value;
 
-        XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
+        XPLMSetDatai(pins[i].dataRef,setValue);
 				pins[i].lastSimValue = setValue;
       } else if (type == xplmType_IntArray) {
         int setValue[1];
@@ -370,7 +380,7 @@ float getRawDataF(int i) {
         XPLMGetDatavf(pins[i].dataRef,readValue, pins[i].dataRefIndex, 1);
 				return readValue[0];
       }
-
+	return -1;
 }
 
 void setTimeStep(float in) {
@@ -389,7 +399,7 @@ void setStepData(int pin, int value) {
 
 void setStepLoop() {
 	for (int i=0;i<nrOfPins;i++) {
-		if (pins[i].ioMode == DI_INPUT_STEP) {
+		if (pins[i].ioMode == DI_INPUT_STEP || (pins[i].ioMode == DI_4X4 && pins[i].xplaneExtra == 2)) {
 			if (pins[i].prevValue == 1) {
 			// increse step while holding button based on time elapsed
 			// the center value in configuration is the steps per second we want to create
@@ -547,12 +557,61 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 						case AI_FILTER:    //
 							setAnalogData(i, var);
 							break;
+						case AI_OVERSAMPLE:    //
+							setAnalogData(i, ((float)var)/10);
+							break;
 						case DI_ROTARY_ENCODER_TYPE1:    //
-							setDigitalData(i, var);
+							setDigitalData(i, var * pins[i].center);
 							break;
 						case DI_3WAY_2:    //
               //XPLMDebugString("3way switch\n");
 							setAnalogData(i, var);
+							break;
+						case DI_4X4:    //
+							// this might go in its own function, but then we cant use the continue to go forward in the for loop
+							if (pins[i].xplaneExtra == 0) {
+								if (pins[i].pinExtra == var) {
+									setDigitalData(i, 1);
+								} else if(var == 0) {
+									setDigitalData(i, 0);
+									continue;
+								} else {
+									continue;
+								}
+							} else if (pins[i].xplaneExtra == 1) {
+								// toggle data
+								if (pins[i].pinExtra == var) {
+									if (pins[i].prevValue == 0) {
+										pins[i].prevValue = 1;
+										float current = getRawDataF(i);
+										if (current > pins[i].xplaneMin) {
+											setRawDataF(i, pins[i].xplaneMin);
+										} else {
+											setRawDataF(i, pins[i].xplaneMax);
+										}
+
+									}
+
+								} else if(var == 0) {
+									pins[i].prevValue = 0;
+									//setDigitalData(i, 0);
+									continue;
+								} else {
+									continue;
+								}
+							}else if (pins[i].xplaneExtra == 2) {
+								// toggle data
+								if (pins[i].pinExtra == var) {
+									setStepData(i, 1);
+
+								} else if(var == 0) {
+									setStepData(i, 0);
+									continue;
+								} else {
+									continue;
+								}
+							}
+
 							break;
 						}
 					return;
@@ -575,7 +634,7 @@ void sendConfigToArduino(int cport_nr) {
     int i = sendcount;
     sendcount++;
     //{1;2;0;D3,1,0;A2,5,3;}
-    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
+    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
     display("write serial:%s", out);
     RS232_SendBuf(cport_nr, out, len+1);
   }
@@ -588,7 +647,7 @@ void sendConfigToEth(udpSocket sock) {
     int i = sendcount;
     sendcount++;
     //{1;2;0;D3,1,0;A2,5,3;}
-    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].extraInfo);
+    int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
     display("write udp:%s", out);
 		sendUDP(sock, out, len+1);
     //RS232_SendBuf(cport_nr, out, len+1);
@@ -614,12 +673,19 @@ void sendDataToUDP(udpSocket sock) {
 
 	for (int i=0;i<nrOfPins;i++) {
 		if (pins[i].output == 1) {
+			if (pins[i].ioMode == DO_HIGH || pins[i].ioMode == DO_LOW) {
+				// do nothing
+				continue;
+			}
 			int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
       if (type == xplmType_Int) {
 
         setDigitalPinEth(sock,i,XPLMGetDatai(pins[i].dataRef) );
       } else if (type == xplmType_Float) {
+				float temp = XPLMGetDataf(pins[i].dataRef);
+				int value = (int)(temp * pins[i].center);
+				setDigitalPinEth(sock,i,value);
 
       } else if (type == xplmType_Double) {
 
@@ -632,6 +698,10 @@ void sendDataToUDP(udpSocket sock) {
 void drawStatusDisplayInfo() {
 	statusClear();
 	for (int i=0;i<nrOfPins;i++) {
-		statusPrintf("%s = %d -> %s=%f \n", pins[i].pinNameString, pins[i].prevValue, pins[i].dataRefString, pins[i].lastSimValue);
+		if (pins[i].output == 1) {
+			statusPrintf("%s = %d <- %s=%f \n", pins[i].pinNameString, pins[i].prevValue, pins[i].dataRefString, pins[i].lastSimValue);
+		} else {
+			statusPrintf("%s = %d -> %s=%f \n", pins[i].pinNameString, pins[i].prevValue, pins[i].dataRefString, pins[i].lastSimValue);
+		}
 	}
 }

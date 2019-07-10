@@ -128,16 +128,7 @@ PLUGIN_API int XPluginStart(
 
 	/* Append a few menu items to our submenu.  We will use the refcon to
 	 * store the amount we want to change the radio by. */
-	XPLMAppendMenuItem(
-						myMenu,
-						"Decrement Nav1",
-						(void *) 3,
-						1);
-	XPLMAppendMenuItem(
-						myMenu,
-						"Increment Nav1",
-						(void *) 2,
-						1);
+	
   XPLMAppendMenuItem(
 						myMenu,
 						"Toggle debug",
@@ -447,7 +438,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
       // ONly half of message recieved or garbage
       //display("received %i bytes: %s\n", n, (char *)buf);
     } else {
-			//display("received udp %i bytes: %s\n", res, (char *)buf);
+			display("received udp %i bytes: %s\n", res, (char *)buf);
       parseSerialInput(buf, res);
     }
   }

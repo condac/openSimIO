@@ -29,6 +29,11 @@
 // Use ethernet shield
 #define ETHERNET
 
+// Use TM1637 drivers fopr 7 segment displays
+#define TM1637
+
+// Servo
+#define SERVO
 
 // ############
 // End of plugins
@@ -39,7 +44,9 @@
 #include "common.h"
 
 String type = BOARD;
-#define TIME_DEBUG 
+
+// Show debug stuff
+//#define TIME_DEBUG 
 
 
 #include <avr/wdt.h> // Watchdog interupt // 20 bytes for setup and 2 bytes for each reset, no memory
@@ -55,6 +62,14 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 
 #ifdef ROTARY_ENCODER
 #include "rotaryEncoder.h"
+#endif
+
+#ifdef TM1637
+#include "tm1637functions.h"
+#endif
+
+#ifdef SERVO
+#include "servo.h"
 #endif
 
 int myId = 0; // this will automaticly be set by the chain ping loop
@@ -75,6 +90,9 @@ void setConfig(int nr, int mode, int extra);
 long frametime;
 long pingtime;
 #define PING_INTERVAL 5000
+
+long refreshtime;
+#define REFRESH_INTERVAL 1000 // refresh interval
 
 #ifdef TIME_DEBUG
 long looptime;
@@ -115,6 +133,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
+  //pinsConfig[2] = DI_4X4;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
@@ -128,8 +147,8 @@ void setup() {
   pinsConfig[DIGITAL_PIN_COUNT+5] = AI_FILTER;
   
   pinsConfig[13] = DO_BOOL;*/
-  pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
-  pinsConfig[DIGITAL_PIN_COUNT+2] = AI_RAW;
+  //pinsConfig[DIGITAL_PIN_COUNT+1] = AI_FILTER;
+  //pinsConfig[DIGITAL_PIN_COUNT+0] = AI_FILTER;
   pcSerial.println("boot2");
   
   setupDigitalPins();
@@ -173,9 +192,12 @@ void loop() {
     #else
     sendData();
     #endif
+    //cyclicRefresh();
+  }
+  if (millis()>refreshtime) {
+    refreshtime = millis() + REFRESH_INTERVAL; 
     cyclicRefresh();
   }
-
   if (millis()>pingtime) {
     pingtime = millis() + PING_INTERVAL; 
     ping();
@@ -592,7 +614,10 @@ void saveConfig() {
   // TODO
 }
 void relayToPC() {
-  // message to PC from slave
+  #ifdef ETHERNET 
+  relayToPCEth(); // in network.h
+  #else
+  // message to PC from slave via serial
   char data;
   
   pcSerial.print("{99;");
@@ -610,7 +635,7 @@ void relayToPC() {
   // end of message
   pcSerial.println(data);
   return;
-
+  #endif
 }
 
 void cyclicRefresh() {

@@ -17,3 +17,7 @@
 #define USED 13 // Used by functions that need extra pins, not sure if we need this or just use 0
 #define DI_3WAY 14 // TODO 3-way switch
 #define DI_3WAY_2 15 // 3 way switch with special function, uses 4 wires
+#define DO_TM1637_DEC 135 // Display decimal number
+#define DI_4X4 16 // 4x4 key matrix
+
+int getTypeFromString(char* string);

@@ -19,6 +19,17 @@ void readAnalogPinRaw( int pin) {
   
   int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
   
+  if (currentState != pinsData[pin]) {
+    pin_changed[pin] = CHANGE_COUNT;
+    pinsData[pin] = currentState;
+  }
+}
+
+void readAnalogPinFilter( int pin) {
+  // Use average filter and a little deadband
+  int deadband = 10;
+  int filter = 5;
+  int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
   analogFilter[pin-DIGITAL_PIN_COUNT][analogFilter2[pin-DIGITAL_PIN_COUNT]] = currentState;
   long sum = 0;
   for (int i=0;i<10;i++) {
@@ -38,20 +49,36 @@ void readAnalogPinRaw( int pin) {
 //  Serial.print("currentState ");
 //  Serial.println(currentState);
   currentState = sum;
-  if (currentState != pinsData[pin]) {
+  
+  if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
     pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
 }
-
-void readAnalogPinFilter( int pin) {
-  // Use average filter and a little deadband
-  int deadband = 10;
-  int filter = 5;
-  int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
-  currentState = (pinsData[pin]*(filter+1) + currentState)/(filter+2);
+void readAnalogPinOverSample( int pin) {
   
-  if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
+  int currentState = analogRead(pin-DIGITAL_PIN_COUNT);
+  
+  analogFilter[pin-DIGITAL_PIN_COUNT][analogFilter2[pin-DIGITAL_PIN_COUNT]] = currentState;
+  long sum = 0;
+  for (int i=0;i<10;i++) {
+    int test = analogFilter[pin-DIGITAL_PIN_COUNT][i];
+    sum = sum + test;
+//    Serial.print(",");
+//    Serial.print(test);
+  }
+  analogFilter2[pin-DIGITAL_PIN_COUNT]++;
+  if (analogFilter2[pin-DIGITAL_PIN_COUNT] > 10) {
+    analogFilter2[pin-DIGITAL_PIN_COUNT] = 0;
+  }
+  
+  //sum = sum /10;
+//  Serial.print("sum ");
+//  Serial.print(sum);
+//  Serial.print("currentState ");
+//  Serial.println(currentState);
+  currentState = sum;
+  if (currentState != pinsData[pin]) {
     pin_changed[pin] = CHANGE_COUNT;
     pinsData[pin] = currentState;
   }
@@ -82,6 +109,46 @@ void read3way_2( int pin, int extra) {
   }
   
 }
+void read4x4(int pin) {
+  int newValue = 0;
+  // put your main code here, to run repeatedly:
+  for (int i = 0; i < 4; i++) {
+    bool colSet[4] = {HIGH,HIGH,HIGH,HIGH};
+    colSet[i] = LOW;
+    digitalWrite(pin+4,colSet[0]);
+    digitalWrite(pin+5,colSet[1]);
+    digitalWrite(pin+6,colSet[2]);
+    digitalWrite(pin+7,colSet[3]);
+    colSet[i] = HIGH;
+    bool row0 = digitalRead(pin+0);
+    bool row1 = digitalRead(pin+1);
+    bool row2 = digitalRead(pin+2);
+    bool row3 = digitalRead(pin+3);
+    
+    if(row0 && !row1 ){
+          //Serial.print(1+i*4);
+          newValue = 1+i*4;
+    }else if(row1 && !row2){
+          //Serial.print(2+i*4);
+          newValue = 2+i*4;
+    }else if(row2 && !row3){
+          //Serial.print(3+i*4);
+          newValue = 3+i*4;
+    }else if(row3 && !row0){
+          //Serial.print(4+i*4);
+          newValue = 4+i*4;
+    }else{;}
+  }
+ 
+  
+  if (pinsData[pin] != newValue) {
+    pinsData[pin] = newValue;
+    pin_changed[pin] = CHANGE_COUNT;
+    Serial.print("4x4: ");
+    Serial.println(newValue);
+  }
+}
+
 
 void handlePins(int pinArray[], int numberOfPins) {
 
@@ -105,6 +172,9 @@ void handlePins(int pinArray[], int numberOfPins) {
     case AI_FILTER:    // Analog filtered value
       readAnalogPinFilter(i);
       break;
+    case AI_OVERSAMPLE:    // Analog 10 times and add the sum value
+      readAnalogPinOverSample(i);
+      break;
     #ifdef ROTARY_ENCODER
     case DI_ROTARY_ENCODER_TYPE1:    // same as with pullup, only setup initiation is different
       getRotationType1(i, i+1); // getRotation returns true if changed
@@ -112,6 +182,10 @@ void handlePins(int pinArray[], int numberOfPins) {
     #endif
     case DI_3WAY_2:    // 
       read3way_2(i, pinsExtra[i]);
+      break;
+      
+    case DI_4X4:    // 
+      read4x4(i);
       break;
     }
   }
@@ -145,6 +219,15 @@ void setupPins(int configArray[], int numberOfPins) {
     case DI_INPUT_STEP:    // 
       pinMode(i, INPUT_PULLUP);
       break;
+    case AI_RAW:    // 
+      pinMode(i, INPUT);
+      break;
+    case AI_FILTER:    // 
+      pinMode(i, INPUT);
+      break;
+    case AI_OVERSAMPLE:    // 
+      pinMode(i, INPUT);
+      break;
     case DO_HIGH:    // just set the pin to 5v
       pinMode(i, OUTPUT);
       digitalWrite(i,HIGH);
@@ -155,7 +238,10 @@ void setupPins(int configArray[], int numberOfPins) {
       break;  
     case DO_BOOL:    // set outputmode 
       pinMode(i, OUTPUT);
-      break;         
+      break;  
+    case AO_PWM:    // set outputmode 
+      pinMode(i, OUTPUT);
+      break;
     case DI_ROTARY_ENCODER_TYPE1:    // same as with pullup, only setup initiation is different
       pinMode(i, INPUT_PULLUP);
       pinMode(i+1, INPUT_PULLUP);
@@ -171,8 +257,42 @@ void setupPins(int configArray[], int numberOfPins) {
 //      digitalWrite(pinsExtra[i]+1,LOW);
       
       configArray[pinsExtra[i]] = NOTUSED;
+  
+      break;
+#ifdef TM1637
+    case DO_TM1637_DEC:    // 
+      pinMode(i, OUTPUT);
+      pinMode(pinsExtra[i], OUTPUT);
+      break;
+#endif
+#ifdef SERVO
+    case AO_SERVO:    // 
+      setupServo(i);
+
+      break;
+#endif
+    case DI_4X4:    // 
+
+      //Make row pins input
+      pinMode(i, INPUT_PULLUP);
+      pinMode(i+1, INPUT_PULLUP);
+      pinMode(i+2, INPUT_PULLUP);
+      pinMode(i+3, INPUT_PULLUP);
+      pinMode(i+4, OUTPUT);
+      pinMode(i+5, OUTPUT);
+      pinMode(i+6, OUTPUT);
+      pinMode(i+7, OUTPUT);
+      
+      configArray[i+1] = NOTUSED;
+      configArray[i+2] = NOTUSED;
+      configArray[i+3] = NOTUSED;
+      configArray[i+4] = NOTUSED;
+      configArray[i+5] = NOTUSED;
+      configArray[i+6] = NOTUSED;
+      configArray[i+7] = NOTUSED;
       
       break;
+  
     }
   }
 }
@@ -192,7 +312,19 @@ void setValue(int pin, int val) {
     case DO_BOOL:    // 
       digitalWrite(pin,val);
       break;
-    
+    case AO_PWM:    // 
+      analogWrite(pin,val);
+      break;
+      
+#ifdef TM1637
+    case DO_TM1637_DEC:    // 
+      setTM1637dec(pin,val);
+      break;
+#endif
+#ifdef SERVO
+    case AO_SERVO:    // 
+      setServo(pin,val);
+      break;
+#endif
     }
-  
 }
