@@ -7,6 +7,11 @@ The program is in very early development. Only the basic functions of digital in
 ### Working features
 * Digital input, on/off switch and push and hold to inc/dec value
 * Analog input
+* TM1673 function to display number on 7 seg display. 
+* Servo output
+* PWM output
+* 4x4 key matrix
+* Ability to have more than one arduino for input/output through serial communication. 
 
 ## Installation
 * Download and unzip the latest release zip file with the x-plane plugin in your xplane plugins folder (X-Plane 11/Resources/plugins)
