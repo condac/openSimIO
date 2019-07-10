@@ -50,10 +50,11 @@ void readAnalogPinFilter( int pin) {
 //  Serial.println(currentState);
   currentState = sum;
   
-  if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
+  if ( (currentState < pinsExtra[pin]-deadband ) || (currentState > pinsExtra[pin]+deadband) ) {
     pin_changed[pin] = CHANGE_COUNT;
-    pinsData[pin] = currentState;
+    pinsExtra[pin] = currentState;
   }
+  pinsData[pin] = currentState;
 }
 void readAnalogPinOverSample( int pin) {
   

@@ -2,12 +2,13 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "iotypes.h"
 #include "udp.h"
 #include "rs232.h"
 #include "statusDisplay.h"
 #include "iotypes.h"
-
+#include "pins.h"
 
 typedef struct  {
 
@@ -49,6 +50,27 @@ pin_struct* lineToStruct( char* line) {
   // convert config line to struct and return it as pointer
   pin_struct *newPin = malloc(sizeof (*newPin));
   if((line[0] == '#') || (line[0] == '\r') || (line[0] == '\n') ) {
+    return NULL;
+  }
+	if((line[0] == '*') ) {
+		// one time dataref set
+		XPLMDebugString("read *\n");
+		char dataref[512];
+		float value;
+		int c = sscanf(line,"*%512[^;];%f;", dataref, &value);
+		if (c == 2) {
+			XPLMDebugString("find dataref *\n");
+			XPLMDataRef dataRef = XPLMFindDataRef(dataref);
+
+	    if (dataRef != NULL)	{
+				XPLMDebugString("set onetime");
+				setRawDataFromRef(dataRef, value);
+				display("overiding %s %f",dataref, value );
+			}
+		} else {
+			XPLMDebugString("error *\n");
+		}
+
     return NULL;
   }
 
@@ -250,10 +272,12 @@ float map(float s, float a1, float a2, float b1, float b2)
 }
 
 
-float mapValue(float value, float min, float max, float center, float outMin, float outMax, int reverse) {
+float mapValue(float value, float min, float max, float center, float outMin, float outMax, int reverse, float extra) {
   float out = 0.0;
   float outCenter = (outMin + outMax) /2;
-
+	if (extra <= 0.01) {
+		extra = 1.0;
+	}
   if (value>max) {
     value = max;
   }
@@ -264,22 +288,28 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
 
   if (reverse == 1) {
     if (value>=center) {
-      out = map(value, center, max, outCenter, outMin);
+			// For exponential convertion to work we must first map the input from 0-1 then apply exp and then scale to final range
+			out = map(value, center, max, 0, 1);
+			out = pow(out, extra);
+			out = map(out, 0, 1, outCenter, outMin);
 
     } else {
-      out = map(value, min, center, outMax, outCenter);
+			out = map(value, min, center, 1, 0);
+			out = pow(out, extra);
+      out = map(out, 1, 0, outMax, outCenter);
     }
   } else {
     if (value>=center) {
-      out = map(value, center, max, outCenter, outMax);
+			out = map(value, center, max, 0, 1);
+			out = pow(out, extra);
+      out = map(out, 0, 1, outCenter, outMax);
 
     } else {
-      out = map(value, min, center, outMin, outCenter);
+			out = map(value, min, center, 1, 0);
+			out = pow(out, extra);
+      out = map(out, 1, 0, outMin, outCenter);
     }
   }
-
-
-
 
   if (out>outMax) {
     out = outMax;
@@ -287,6 +317,7 @@ float mapValue(float value, float min, float max, float center, float outMin, fl
   if (out<outMin) {
     out = outMin;
   }
+
   return out;
 }
 void setAnalogData(int i, float value) {
@@ -308,19 +339,19 @@ void setAnalogData(int i, float value) {
         XPLMSetDatavi(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
 				pins[i].lastSimValue = setValue[0];
       } else if (type == xplmType_Float) {
-        float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, pins[i].xplaneExtra);
         //display("setAnalogData setting float %s %f %d %d ", pins[i].pinNameString, setValue, value, pins[i].dataRefIndex);
         XPLMSetDataf(pins[i].dataRef,setValue);
 				pins[i].lastSimValue = setValue;
       } else if (type == xplmType_Double) {
         double setValue[1];
-        setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, pins[i].xplaneExtra);
         //display("setAnalogData setting double %s %f", pinName, setValue);
         XPLMSetDatad(pins[i].dataRef,setValue[0]);
 				pins[i].lastSimValue = setValue[0];
       } else if (type == xplmType_FloatArray) {
         float setValue[1];
-        setValue[0] = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+        setValue[0] = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, pins[i].xplaneExtra);
         //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
         XPLMSetDatavf(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
 				pins[i].lastSimValue = setValue[0];
@@ -360,6 +391,43 @@ void setRawDataF(int i, float value) {
         //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
         XPLMSetDatavf(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
 				pins[i].lastSimValue = setValue[0];
+      }
+
+}
+
+void setRawDataFromRef(XPLMDataRef dataRef, float value) {
+  //display("setRawDataF %f", value);
+
+      int type = XPLMGetDataRefTypes(dataRef);
+
+			if (type == xplmType_Int) {
+        int setValue;
+        setValue = (int) value;
+				display("setRawDataFromRef %d %f", setValue, value);
+        XPLMSetDatai(dataRef,setValue);
+
+      } else if (type == xplmType_IntArray) {
+        int setValue[1];
+        setValue[0] = (int) value;
+
+        XPLMSetDatavi(dataRef,setValue, 0, 1);
+
+      } else if (type == xplmType_Float) {
+        //display("setAnalogData setting float %s %f %d %d ", pins[i].pinNameString, setValue, value, pins[i].dataRefIndex);
+        XPLMSetDataf(dataRef,value);
+
+      } else if (type == xplmType_Double) {
+        double setValue;
+        setValue = (double) value;
+        //display("setAnalogData setting double %s %f", pinName, setValue);
+        XPLMSetDatad(dataRef,setValue);
+
+      } else if (type == xplmType_FloatArray) {
+        float setValue[1];
+        setValue[0] = value;
+        //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
+        XPLMSetDatavf(dataRef,setValue, 0, 1);
+
       }
 
 }
@@ -448,20 +516,20 @@ void setDigitalData(int i, int value) {
 		pins[i].lastSimValue = setValue;
 	} else if (type == xplmType_Float) {
     //XPLMDebugString("setDigitalData float\n");
-	  float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+	  float setValue = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, 1);
 	  //display("setAnalogData setting float %s %f", pinName, setValue);
 	  XPLMSetDataf(pins[i].dataRef,setValue);
 		pins[i].lastSimValue = setValue;
 	} else if (type == xplmType_Double) {
 	  double setValue[1];
-    setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+    setValue[0] = (double) mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, 1);
 	  //display("setAnalogData setting double %s %f", pinName, setValue);
 	  XPLMSetDatad(pins[i].dataRef,setValue[0]);
 		pins[i].lastSimValue = setValue[0];
 	} else if (type == xplmType_FloatArray) {
     //XPLMDebugString("setDigitalData float array\n");
     float setValue[1];
-    setValue[0] = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse);
+    setValue[0] = mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, 1);
     //display("setAnalogData[] setting float %s %f %d %d ", pins[i].pinNameString, setValue[0], value, pins[i].dataRefIndex);
     XPLMSetDatavf(pins[i].dataRef,setValue, pins[i].dataRefIndex, 1);
 		pins[i].lastSimValue = setValue[0];

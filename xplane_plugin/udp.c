@@ -337,3 +337,15 @@ int readUDP(udpSocket sock, char buffer[], int len) {
 	}
 	return status;
 }
+
+
+int ifMessage(udpSocket sock){
+  fd_set rfd;
+  FD_ZERO(&rfd);
+  FD_SET(sock.sock, &rfd);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
+  int ret = select(sock.sock+1, &rfd, NULL, NULL, &timeout);
+  return ret;
+}

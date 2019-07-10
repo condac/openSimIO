@@ -128,7 +128,7 @@ PLUGIN_API int XPluginStart(
 
 	/* Append a few menu items to our submenu.  We will use the refcon to
 	 * store the amount we want to change the radio by. */
-	
+
   XPLMAppendMenuItem(
 						myMenu,
 						"Toggle debug",
@@ -430,18 +430,25 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 
 
 	//char buf2[len];
-	int res = readUDP(asock, buf, 4095);
-  if (res>0) {
-		signal = elapsed;
-    buf[res] = '\0';
-    if (ifCharInArray(buf, '}') == -1) {
-      // ONly half of message recieved or garbage
-      //display("received %i bytes: %s\n", n, (char *)buf);
-    } else {
-			display("received udp %i bytes: %s\n", res, (char *)buf);
-      parseSerialInput(buf, res);
-    }
-  }
+	while (ifMessage(asock)) {
+		int res = readUDP(asock, buf, 4095);
+		//int test = ifMessage(asock);
+	  if (res>0) {
+			signal = elapsed;
+	    buf[res] = '\0';
+	    if (ifCharInArray(buf, '}') == -1) {
+	      // ONly half of message recieved or garbage
+	      //display("received %i bytes: %s\n", n, (char *)buf);
+	    } else {
+				//display("received udp %i bytes: %s\n", res, (char *)buf);
+	      parseSerialInput(buf, res);
+	    }
+	  }
+	}
+
+	// if( test > 0) {
+	// 	display("udp que %d\n", test);
+	// }
 	if (signal < elapsed - 5.0) {
 		display("Error! no connection for 5s");
 		signal = elapsed;
