@@ -578,6 +578,80 @@ void sendDataToArduino(int cport_nr) {
 	}
 }
 
+void digitalButton(int i, int var) {
+	if (pins[i].xplaneExtra == 0) {
+		// on off switch
+		if (pins[i].dataRef != NULL) {
+			int set = 0;
+			if (pins[i].reverse == 1) {
+				if (var == 1) {
+					set = pins[i].xplaneMin;
+				} else {
+					set = pins[i].xplaneMax;
+				}
+			}else {
+				if (var == 1) {
+					set = pins[i].xplaneMax;
+				} else {
+					set = pins[i].xplaneMin;
+				}
+			}
+			setDigitalData(i, set);
+		}else if (pins[i].commandRef != NULL) {
+			if (pins[i].reverse == 1) {
+				if (var == 1) {
+					XPLMCommandEnd(pins[i].commandRef);
+				} else {
+					XPLMCommandBegin(pins[i].commandRef);
+				}
+			}else {
+				if (var == 1) {
+					XPLMCommandBegin(pins[i].commandRef);
+				} else {
+					XPLMCommandEnd(pins[i].commandRef);
+				}
+			}
+
+		}
+
+	} else if (pins[i].xplaneExtra == 1) {
+		// toggle data
+		if (1 == var) {
+			if (pins[i].prevValue == 0) {
+				pins[i].prevValue = 1;
+				if (pins[i].dataRef != NULL) {
+					float current = getRawDataF(i);
+					if (current > pins[i].xplaneMin) {
+						setRawDataF(i, pins[i].xplaneMin);
+					} else {
+						setRawDataF(i, pins[i].xplaneMax);
+					}
+				} else if (pins[i].commandRef != NULL) {
+					XPLMCommandOnce(pins[i].commandRef);
+				}
+
+
+			}
+
+		} else if(var == 0) {
+			pins[i].prevValue = 0;
+			//setDigitalData(i, 0);
+
+		}
+	}else if (pins[i].xplaneExtra == 2) {
+		// step data
+		if (pins[i].pinExtra == var) {
+			setStepData(i, 1);
+
+		} else if(var == 0) {
+			setStepData(i, 0);
+
+		} else {
+
+		}
+	}
+}
+
 void parseInputPin(char* data, int masterId, int slaveId) {
   //display("parse inputpin start  %s master %d slave %d", data, masterId, slaveId);
   char* digital = strstr(data, "D"); // this also removes leading spaces
@@ -614,19 +688,11 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 
 				      break;
 						case DI_INPUT_PULLUP:    //
-							if (pins[i].dataRef != NULL) {
-								setDigitalData(i, var);
-							}else if (pins[i].commandRef != NULL) {
-								XPLMCommandOnce(pins[i].commandRef);
-							}
+							digitalButton(i, var);
 
 							break;
 						case DI_INPUT_FLOATING:    //
-							if (pins[i].dataRef != NULL) {
-								setDigitalData(i, var);
-							}else if (pins[i].commandRef != NULL) {
-								XPLMCommandOnce(pins[i].commandRef);
-							}
+							digitalButton(i, var);
 							break;
 						case DI_INPUT_STEP:    //
 							setStepData(i, var);

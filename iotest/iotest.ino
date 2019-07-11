@@ -4,8 +4,8 @@
 
 
 // Uncomment the master or slave define, never both!
-//#define MASTER
-#define SLAVE
+#define MASTER
+//#define SLAVE
 
 #define MASTER_ID 1 // Change if you have more than one master board in your system
 
@@ -31,7 +31,7 @@
 #define ROTARY_ENCODER
 
 // Use ethernet shield
-//#define ETHERNET
+#define ETHERNET
 
 // Use TM1637 drivers fopr 7 segment displays
 #define TM1637
@@ -153,7 +153,7 @@ void setup() {
   pinsConfig[13] = DO_BOOL;*/
   //pinsConfig[DIGITAL_PIN_COUNT+1] = AI_FILTER;
   //pinsConfig[DIGITAL_PIN_COUNT+0] = AI_FILTER;
-  pcSerial.println("boot2");
+  pcSerial.println("Starting version v0.0.2");
   
   setupDigitalPins();
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
