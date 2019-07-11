@@ -830,37 +830,32 @@ void sendDataToUDP(udpSocket sock) {
 				continue;
 			}
 			int type = XPLMGetDataRefTypes(pins[i].dataRef);
-
+			float outValue;
       if (type == xplmType_Int) {
 				int temp = XPLMGetDatai(pins[i].dataRef);
-        setDigitalPinEth(sock,i, temp);
-				pins[i].lastSimValue = temp;
+				outValue = temp;
+        //setDigitalPinEth(sock,i, temp);
+
       } else if (type == xplmType_Float) {
-				float temp = XPLMGetDataf(pins[i].dataRef);
-				pins[i].lastSimValue = temp;
-				if (temp == pins[i].xplaneMax) {
-					setDigitalPinEth(sock,i,1);
-				} else {
-					setDigitalPinEth(sock,i,0);
-				}
-				//int value = (int)(temp * pins[i].center);
-				//setDigitalPinEth(sock,i,value);
+				outValue = XPLMGetDataf(pins[i].dataRef);
+
 
       } else if (type == xplmType_FloatArray) {
 				float readValue[1];
         XPLMGetDatavf(pins[i].dataRef,readValue, pins[i].dataRefIndex, 1);
-				pins[i].lastSimValue = readValue[0];
-				if (readValue[0] == pins[i].xplaneMax) {
-					setDigitalPinEth(sock,i,1);
-				} else {
-					setDigitalPinEth(sock,i,0);
-				}
-				//int value = (int)(temp * pins[i].center);
-				//setDigitalPinEth(sock,i,value);
+				outValue = readValue[0];
+
 
       } else if (type == xplmType_Double) {
 
       }
+			pins[i].lastSimValue = outValue;
+			// Transform value
+			int outValueInt = map(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].pinMin, pins[i].pinMax);
+			
+			// if ethernet or serial
+			setDigitalPinEth(sock,i,outValueInt);
+
 		}
 	}
 }

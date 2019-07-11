@@ -38,5 +38,7 @@ int getTypeFromString(char* string) {
   if (strcmp(string, "DO_TM1637_DEC") == 0) { return 135;}
   //#define DI_4X4 16 // 4x4 key matrix
   if (strcmp(string, "DI_4X4") == 0) { return 16;}
+  //#define AO_STEPPER 136 // Stepper motor
+  if (strcmp(string, "AO_STEPPER") == 0) { return 136;}
   return 0;
 }

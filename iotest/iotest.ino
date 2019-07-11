@@ -39,6 +39,13 @@
 // Servo
 #define SERVO
 
+// Stepper motors
+// NOTE! You need to configure steppermotors in steppermotors.h
+// There are just to many options to do this through the plugin
+#define STEPPER
+
+
+
 // ############
 // End of plugins
 // ############
@@ -76,6 +83,10 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #include "servo.h"
 #endif
 
+#ifdef STEPPER
+#include "steppermotors.h"
+#endif
+
 int myId = 0; // this will automaticly be set by the chain ping loop
 bool cts = true;
 bool unconfigured = true;
@@ -96,7 +107,7 @@ long pingtime;
 #define PING_INTERVAL 5000
 
 long refreshtime;
-#define REFRESH_INTERVAL 1000 // refresh interval
+#define REFRESH_TIME 1000 // refresh interval
 
 #ifdef TIME_DEBUG
 long looptime;
@@ -137,7 +148,8 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  //pinsConfig[2] = DI_4X4;
+  pinsConfig[2] = AO_STEPPER;
+  pinsData[2] = 1800;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
@@ -156,6 +168,9 @@ void setup() {
   pcSerial.println("Starting version v0.0.2");
   
   setupDigitalPins();
+
+  setupStepper();
+  
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
 }
@@ -199,7 +214,7 @@ void loop() {
     //cyclicRefresh();
   }
   if (millis()>refreshtime) {
-    refreshtime = millis() + REFRESH_INTERVAL; 
+    refreshtime = millis() + REFRESH_TIME; 
     cyclicRefresh();
   }
   if (millis()>pingtime) {
@@ -222,7 +237,9 @@ void loop() {
                                 Serial.flush();
                                 chaintime = millis() - chaintime;
                                 #endif
-            
+   #ifdef STEPPER
+   stepperLoop();
+   #endif
             
                                 #ifdef TIME_DEBUG
                                       if (millis()>debugtime) {

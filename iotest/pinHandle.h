@@ -327,5 +327,10 @@ void setValue(int pin, int val) {
       setServo(pin,val);
       break;
 #endif
+#ifdef STEPPER
+    case AO_STEPPER:    // 
+      pinsData[pin] = val;
+      break;
+#endif
     }
 }
