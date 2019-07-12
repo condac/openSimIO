@@ -1,55 +1,5 @@
-// ############
-// User configurations
-// ############
 
-
-// Uncomment the master or slave define, never both!
-#define MASTER
-//#define SLAVE
-
-#define MASTER_ID 1 // Change if you have more than one master board in your system
-
-#define PC_ID 99 // do not touch
-
-// Enable or disable the serial chain function. 
-#define SERIAL_CHAIN
-
-
-#ifdef SLAVE
-#define FRAMERATE 15
-#else
-#define FRAMERATE 60
-#endif
-
-// ############
-// Plugins
-// ############  IMPORTANT!!!! #########
-// To save program memory we only include functions that you know you will use. 
-// Uncomment the define statement for each plugin you need in your hardware
-
-// Use rotary encoders
-#define ROTARY_ENCODER
-
-// Use ethernet shield
-#define ETHERNET
-
-// Use TM1637 drivers fopr 7 segment displays
-#define TM1637
-
-// Servo
-#define SERVO
-
-// Stepper motors
-// NOTE! You need to configure steppermotors in steppermotors.h
-// There are just to many options to do this through the plugin
-#define STEPPER
-
-
-
-// ############
-// End of plugins
-// ############
-
+#include "Config.h" // This file contains all user configurations you need to make
 
 #include "boards.h"
 #include "common.h"
@@ -134,22 +84,27 @@ void setup() {
   Serial.begin(115200);
   pcSerial.println("boot");
   pcSerial.begin(115200);
-  #ifdef SERIAL_CHAIN
-  chainSerial.begin(115200);
-  #endif
-  
+    // disable SD card if one in the slot
+  pinMode(4,OUTPUT);
+  digitalWrite(4,HIGH);
+
   #ifdef ETHERNET
   while (setupEthernet() != 1) {
     delay(100);
   }
-  
+  Serial.println(Ethernet.localIP());
   #endif
+  #ifdef SERIAL_CHAIN
+  chainSerial.begin(115200);
+  #endif
+  
+
 
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
   pinsConfig[2] = AO_STEPPER;
-  pinsData[2] = 1800;
+  //pinsData[2] = 1800;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
@@ -168,9 +123,9 @@ void setup() {
   pcSerial.println("Starting version v0.0.2");
   
   setupDigitalPins();
-
+#ifdef STEPPER
   setupStepper();
-  
+  #endif
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
 }

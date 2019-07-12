@@ -15,26 +15,21 @@
 typedef struct  {
   Stepper s;
   int stepsPerRev;
-  int rotating; // 1 = Like a compass we go the shortest way to reach target. 0 = Linear like a speedometer
+  bool rotating; // 1 = Like a compass we go the shortest way to reach target. 0 = Linear like a speedometer
+  bool inverted; // change rotating direction
   int currentSteps;
   int pin; // this gets the same value as the first pin used for the stepper as index for our data transfer
   int rpm;
+  int homePin;
 } myStep;
 
 
 // ############## here you have to add each stepper and the pins connected to it ################
 myStep stepp[] = {
-  //{Stepper(2048, 8, 10, 9, 11), 2048, 1, 0, 8, 15},
-  {Stepper(2048, 2, 4, 3, 5), 2048, 1, 0, 2, 10}
+  //{Stepper(2048, 8, 10, 9, 11), 2048, true, false, 0, 8, 15,7},
+  {Stepper(2048, 2, 4, 3, 5), 2048, true, true, 0, 2, 10,7}
 };
 
-void setupStepper() {
-
-  for (int i = 0; i < NR_STEPPERS; i++) {
-    stepp[i].s.setSpeed(stepp[i].rpm);
-  }
-
-}
 
 int degToSteps(int stepsPerRev, int targetDeg) {
   long s = stepsPerRev;
@@ -45,6 +40,33 @@ int degToSteps(int stepsPerRev, int targetDeg) {
   return out;
 }
 
+void homeStepper(int i) {
+  pinMode(stepp[i].homePin, INPUT_PULLUP);
+  if (!digitalRead(stepp[i].homePin)) {
+    // homePin is triggered, move the stepper 1/4 turn so we get the sensor untriggered, then move back untill we are home again
+    stepp[i].s.step(stepp[i].stepsPerRev/4);
+  }
+  while ( digitalRead(stepp[i].homePin) ) {
+    stepp[i].s.step(-1);
+  }
+  // now we are home
+  stepp[i].currentSteps = 0;
+}
+
+void setupStepper() {
+
+  for (int i = 0; i < NR_STEPPERS; i++) {
+    stepp[i].s.setSpeed(stepp[i].rpm);
+    if (stepp[i].homePin != 0) {
+      homeStepper(i);
+    }
+    
+  }
+
+}
+
+
+
 
 void stepperLoop() {
   
@@ -52,6 +74,20 @@ void stepperLoop() {
     int target = degToSteps(stepp[i].stepsPerRev, pinsData[stepp[i].pin]);
     if (target != stepp[i].currentSteps) {
       int s = target - stepp[i].currentSteps;
+      if (stepp[i].rotating) {
+        
+        // Find out if we can do a short cut and rotate in wrong direction
+        if (abs(s) > stepp[i].stepsPerRev/2) {
+           if (s>=0) {
+            s = stepp[i].stepsPerRev - s;
+            s = -s;
+          } else {
+            s = stepp[i].stepsPerRev + s;
+            
+          }
+
+        }
+      }
       if (abs(s) > MAXSTEPSPERLOOP) {
         // only do some stepping to avoid locking the loop
         if (s>0) {
@@ -61,7 +97,19 @@ void stepperLoop() {
         }
       }
       stepp[i].currentSteps = stepp[i].currentSteps + s;
-      stepp[i].s.step(s);
+      if (stepp[i].rotating) {
+        if (stepp[i].currentSteps > stepp[i].stepsPerRev) {
+          stepp[i].currentSteps = stepp[i].currentSteps -stepp[i].stepsPerRev;
+        } else if (stepp[i].currentSteps < 0) {
+          stepp[i].currentSteps = stepp[i].currentSteps + stepp[i].stepsPerRev;
+        }
+      }
+      if (stepp[i].inverted) {
+        stepp[i].s.step(-s);
+      } else {
+        stepp[i].s.step(s);
+      }
+      
     }
   }
 

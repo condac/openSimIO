@@ -221,12 +221,18 @@ void setupPins(int configArray[], int numberOfPins) {
       pinMode(i, INPUT_PULLUP);
       break;
     case AI_RAW:    // 
+    pinMode(i, OUTPUT);
+      digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case AI_FILTER:    // 
+    pinMode(i, OUTPUT);
+      digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case AI_OVERSAMPLE:    // 
+    pinMode(i, OUTPUT);
+      digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case DO_HIGH:    // just set the pin to 5v

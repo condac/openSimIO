@@ -4,10 +4,6 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
-byte mac[] = {
-  0x5A, 0xAB, 0x10, 0x50, 0x7E, 0x57
-};
-IPAddress ip(192, 168, 0, 105);
 
 unsigned int localPort = 34555;      // local port to listen on
 
