@@ -89,10 +89,6 @@ void setup() {
   pinMode(4,OUTPUT);
   digitalWrite(4,HIGH);
 
-  pinMode(A0,OUTPUT);
-  digitalWrite(A0,LOW);
-  delay(1000);
-
   #ifdef ETHERNET
   while (setupEthernet() != 1) {
     pinMode(LED_BUILTIN, OUTPUT);

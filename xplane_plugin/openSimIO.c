@@ -465,6 +465,7 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 		if (signal < elapsed - 5.0) {
 			display("Error! no connection for 5s");
 			signal = elapsed;
+			sendConfigReset();
 		}
 	  // Tell the arduino that we are ready for next frame.
 	  char out[10] = "*";
