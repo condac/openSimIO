@@ -84,12 +84,25 @@ void setup() {
   Serial.begin(115200);
   pcSerial.println("boot");
   pcSerial.begin(115200);
-    // disable SD card if one in the slot
+  
+    // disable SD card if one in the slot, this is needed on newer ethernet boards
   pinMode(4,OUTPUT);
   digitalWrite(4,HIGH);
 
+  pinMode(A0,OUTPUT);
+  digitalWrite(A0,LOW);
+  delay(1000);
+
   #ifdef ETHERNET
   while (setupEthernet() != 1) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH); 
+    delay(100); 
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+    digitalWrite(LED_BUILTIN, HIGH); 
+    delay(100); 
+    digitalWrite(LED_BUILTIN, LOW);
     delay(100);
   }
   Serial.println(Ethernet.localIP());
@@ -103,7 +116,7 @@ void setup() {
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  pinsConfig[2] = AO_STEPPER;
+  //pinsConfig[2] = AO_STEPPER;
   //pinsData[2] = 1800;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
@@ -120,7 +133,7 @@ void setup() {
   pinsConfig[13] = DO_BOOL;*/
   //pinsConfig[DIGITAL_PIN_COUNT+1] = AI_FILTER;
   //pinsConfig[DIGITAL_PIN_COUNT+0] = AI_FILTER;
-  pcSerial.println("Starting version v0.0.2");
+  
   
   setupDigitalPins();
 #ifdef STEPPER
@@ -128,6 +141,7 @@ void setup() {
   #endif
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
+  pcSerial.println("Starting version v0.0.3");
 }
 
 void loop() {

@@ -766,7 +766,7 @@ void parseInputPin(char* data, int masterId, int slaveId) {
 
 							break;
 						}
-					return;
+					//return; // If we do not return we can have multiple functions on same input, for example tire steer and rudder on same axis
 				}
 			}
 		}
@@ -852,7 +852,7 @@ void sendDataToUDP(udpSocket sock) {
 			pins[i].lastSimValue = outValue;
 			// Transform value
 			int outValueInt = map(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].pinMin, pins[i].pinMax);
-			
+
 			// if ethernet or serial
 			setDigitalPinEth(sock,i,outValueInt);
 

@@ -221,12 +221,12 @@ void setupPins(int configArray[], int numberOfPins) {
       pinMode(i, INPUT_PULLUP);
       break;
     case AI_RAW:    // 
-    pinMode(i, OUTPUT);
+      pinMode(i, OUTPUT);
       digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case AI_FILTER:    // 
-    pinMode(i, OUTPUT);
+      pinMode(i, OUTPUT);
       digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;

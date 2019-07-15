@@ -46,8 +46,14 @@ void homeStepper(int i) {
     // homePin is triggered, move the stepper 1/4 turn so we get the sensor untriggered, then move back untill we are home again
     stepp[i].s.step(stepp[i].stepsPerRev/4);
   }
+  int st = 0;
   while ( digitalRead(stepp[i].homePin) ) {
     stepp[i].s.step(-1);
+    st++;
+    if (st > stepp[i].stepsPerRev) {
+      // did not find home
+      break;
+    }
   }
   // now we are home
   stepp[i].currentSteps = 0;

@@ -30,12 +30,13 @@ int setupEthernet() {
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     pcSerial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-    while (true) {
-      return 0;
-    }
+    
+    return 0;
+
   }
+  
   if (Ethernet.linkStatus() == LinkOFF) {
-    pcSerial.println("Ethernet cable is not connected.");
+    pcSerial.println("Ethernet cable is not connected."); // W5500 boards reports cable not connected even if it is
   }
 
   // start UDP
