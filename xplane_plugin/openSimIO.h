@@ -72,7 +72,7 @@ XPLM210—X-Plane 10.00 & newer (10.20 required for 64-bit plugins)
 XPLM200—X-Plane 9.00 & newer
 */
 #define XPLM200 1
-#define XPLM210 1
+//#define XPLM210 1
 //#define XPLM300 1
 //#define XPLM301 1
 
