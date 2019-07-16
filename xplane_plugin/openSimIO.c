@@ -25,6 +25,8 @@
 //#endif
 
 // An opaque handle to the window we will create
+
+  #ifdef XPLM301
 static XPLMWindowID	g_window;
 
 // Callbacks we will register when we create our window
@@ -33,7 +35,7 @@ int					dummy_mouse_handler(XPLMWindowID in_window_id, int x, int y, int is_down
 XPLMCursorStatus	dummy_cursor_status_handler(XPLMWindowID in_window_id, int x, int y, void * in_refcon) { return xplm_CursorDefault; }
 int					dummy_wheel_handler(XPLMWindowID in_window_id, int x, int y, int wheel, int clicks, void * in_refcon) { return 0; }
 void				dummy_key_handler(XPLMWindowID in_window_id, char key, XPLMKeyFlags flags, char virtual_key, void * in_refcon, int losing_focus) { }
-
+#endif
 static float	MyFlightLoopCallback(float inElapsedSinceLastCall,float inElapsedTimeSinceLastFlightLoop, int inCounter, void* inRefcon);
 int readEthernetConfig( char* ip, int* port);
 
@@ -47,6 +49,9 @@ int bdrate=115200;       /* 115200 baud */
 
 int slaveId = 0;
 float signal = 0.0;
+
+int useEthernet = 0;
+int useSerial = 0;
 
 udpSocket asock;
 
@@ -66,7 +71,7 @@ PLUGIN_API int XPluginStart(
 	strcpy(outDesc, "A plug-in for openSimIO.");
 
 
-
+  #ifdef XPLM301
 	XPLMCreateWindow_t params;
 	params.structSize = sizeof(params);
 	params.visible = 1;
@@ -82,12 +87,12 @@ PLUGIN_API int XPluginStart(
 	//
 	// Opt-in to styling our window like an X-Plane 11 native window
 	// If you're on XPLM300, not XPLM301, swap this enum for the literal value 1.
-  #ifdef XPLM301
+
 	params.handleRightClickFunc = dummy_mouse_handler;
 
 	params.layer = xplm_WindowLayerFloatingWindows;
   params.decorateAsFloatingWindow = xplm_WindowDecorationRoundRectangle;
-  #endif
+
 	// Set the window's initial bounds
 	// Note that we're not guaranteed that the main monitor's lower left is at (0, 0)...
 	// We'll need to query for the global desktop bounds!
@@ -99,7 +104,7 @@ PLUGIN_API int XPluginStart(
 	params.top = params.bottom + 200;
 
 	//g_window = XPLMCreateWindowEx(&params);
-
+  #endif
 	// Position the window as a "free" floating window, which the user can drag around
 	//XPLMSetWindowPositioningMode(g_window, xplm_WindowPositionFree, -1);
 	// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
@@ -128,7 +133,7 @@ PLUGIN_API int XPluginStart(
 
 	/* Append a few menu items to our submenu.  We will use the refcon to
 	 * store the amount we want to change the radio by. */
-	
+
   XPLMAppendMenuItem(
 						myMenu,
 						"Toggle debug",
@@ -161,19 +166,28 @@ PLUGIN_API int XPluginStart(
 
   readConfig();
   XPLMDebugString("read config done");
-  char mode[]={'8','N','1',0};
 
+	XPLMDebugString("read serial config");
+  char sport[32];
+  if (readSerialConfig(sport) == 1) {
+		useSerial = 1;
+    XPLMDebugString("serial 1");
+    display("creating serialport %s ", sport);
+		char mode[]={'8','N','1',0};
 
-  if(RS232_OpenComport(cport_nr, bdrate, mode, 0))  {
-    display("Can not open comport\n");
+		if(RS232_OpenComport(cport_nr, bdrate, mode, 0))  {
+			display("Can not open comport\n");
 
-    //return(0);
+		}
   }
+  XPLMDebugString("serial done");
+
   XPLMDebugString("ethernet");
   char ip[18];
 	int port;
   if (readEthernetConfig(ip, &port) == 1) {
     XPLMDebugString("ethernet 1");
+		useEthernet = 1;
     display("creating socket %s %d", ip, port);
     asock = createUDPSocket(ip, port);
   }
@@ -192,8 +206,11 @@ PLUGIN_API int XPluginStart(
 PLUGIN_API void	XPluginStop(void)
 {
 	// Since we created the window, we'll be good citizens and clean it up
+
+	  #ifdef XPLM301
 	XPLMDestroyWindow(g_window);
 	g_window = NULL;
+#endif
 }
 
 PLUGIN_API void XPluginDisable(void) { }
@@ -409,47 +426,58 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
   int n;
   char buf[4096];
 
-  n = RS232_PollComport(cport_nr, buf, 4095);
+	if (useSerial == 1) {
+		n = RS232_PollComport(cport_nr, buf, 4095);
 
-  if(n > 0)    {
+	  if(n > 0)    {
 
-    buf[n] = '\0';   /* always put a "null" at the end of a string! */
-    if (ifCharInArray(buf, '}') == -1) {
-      // ONly half of message recieved or garbage
-      //display("received %i bytes: %s\n", n, (char *)buf);
-    }
-    parseSerialInput(buf, n);
+	    buf[n] = '\0';   /* always put a "null" at the end of a string! */
+	    if (ifCharInArray(buf, '}') == -1) {
+	      // ONly half of message recieved or garbage
+	      //display("received %i bytes: %s\n", n, (char *)buf);
+	    }
+	    parseSerialInput(buf, n);
 
-  }
-	//sendDataToArduino(cport_nr);
-  sendDataToUDP(asock);
-  //sendConfigToArduino(cport_nr);
-	sendConfigToEth(asock);
-
-
-
-
-	//char buf2[len];
-	int res = readUDP(asock, buf, 4095);
-  if (res>0) {
-		signal = elapsed;
-    buf[res] = '\0';
-    if (ifCharInArray(buf, '}') == -1) {
-      // ONly half of message recieved or garbage
-      //display("received %i bytes: %s\n", n, (char *)buf);
-    } else {
-			display("received udp %i bytes: %s\n", res, (char *)buf);
-      parseSerialInput(buf, res);
-    }
-  }
-	if (signal < elapsed - 5.0) {
-		display("Error! no connection for 5s");
-		signal = elapsed;
+	  }
+		sendDataToArduino(cport_nr);
+		sendConfigToArduino(cport_nr);
 	}
-  // Tell the arduino that we are ready for next frame.
-  char out[10] = "*";
-  sendUDP(asock, out, sizeof(out));
 
+	if (useEthernet == 1) {
+		sendDataToUDP(asock);
+	  //
+		sendConfigToEth(asock);
+
+		while (ifMessage(asock)) {
+			int res = readUDP(asock, buf, 4095);
+			//int test = ifMessage(asock);
+		  if (res>0) {
+				signal = elapsed;
+		    buf[res] = '\0';
+		    if (ifCharInArray(buf, '}') == -1) {
+		      // ONly half of message recieved or garbage
+		      //display("received %i bytes: %s\n", n, (char *)buf);
+		    } else {
+					//display("received udp %i bytes: %s\n", res, (char *)buf);
+		      parseSerialInput(buf, res);
+		    }
+		  }
+		}
+
+		// if( test > 0) {
+		// 	display("udp que %d\n", test);
+		// }
+		if (signal < elapsed - 5.0) {
+			display("Error! no connection for 5s");
+			signal = elapsed;
+			sendConfigReset();
+		}
+	  // Tell the arduino that we are ready for next frame.
+	  char out[10] = "*";
+	  sendUDP(asock, out, sizeof(out));
+
+
+	}
 
 	if (statusDisplayShow == 1) {
 		drawStatusDisplayInfo();
@@ -477,7 +505,7 @@ int readEthernetConfig( char* ip, int* port) {
       if (line[0] == '/') {
         XPLMDebugString("Found ip in config");
         display("Found ip in config");
-        int res = sscanf(line, "/%s %d/", ip, port);
+        int res = sscanf(line, "/1;n;%s %d/", ip, port);
         if (res == 2) {
           XPLMDebugString("ethernet ok");
           return 1;
@@ -485,6 +513,36 @@ int readEthernetConfig( char* ip, int* port) {
           XPLMDebugString("ethernet error2");
         }
 
+      }
+    }
+    fclose(configFile);
+  }
+  return -1;
+}
+
+
+int readSerialConfig( char* port) {
+  FILE *configFile;
+  if ((configFile = fopen("Resources/plugins/openSimIO/config.txt","r")) == NULL){
+    XPLMDebugString("Error! opening configfile\n");
+     display("Error! opening configfile");
+  } else {
+
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    XPLMDebugString("opening configfile\n");
+    while ((read = getline(&line, &len, configFile)) != -1) {
+      if (line[0] == '/') {
+        XPLMDebugString("Found serial in config");
+        display("Found serial in config");
+        int res = sscanf(line, "/1;s;%s/", port);
+        if (res == 2) {
+          XPLMDebugString("serial ok");
+          return 1;
+        }else {
+          XPLMDebugString("serial error2");
+        }
 
       }
     }

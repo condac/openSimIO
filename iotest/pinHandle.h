@@ -50,10 +50,11 @@ void readAnalogPinFilter( int pin) {
 //  Serial.println(currentState);
   currentState = sum;
   
-  if ( (currentState < pinsData[pin]-deadband ) || (currentState > pinsData[pin]+deadband) ) {
+  if ( (currentState < pinsExtra[pin]-deadband ) || (currentState > pinsExtra[pin]+deadband) ) {
     pin_changed[pin] = CHANGE_COUNT;
-    pinsData[pin] = currentState;
+    pinsExtra[pin] = currentState;
   }
+  pinsData[pin] = currentState;
 }
 void readAnalogPinOverSample( int pin) {
   
@@ -220,12 +221,18 @@ void setupPins(int configArray[], int numberOfPins) {
       pinMode(i, INPUT_PULLUP);
       break;
     case AI_RAW:    // 
+      pinMode(i, OUTPUT);
+      digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case AI_FILTER:    // 
+      pinMode(i, OUTPUT);
+      digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case AI_OVERSAMPLE:    // 
+    pinMode(i, OUTPUT);
+      digitalWrite(i,LOW);
       pinMode(i, INPUT);
       break;
     case DO_HIGH:    // just set the pin to 5v
@@ -324,6 +331,11 @@ void setValue(int pin, int val) {
 #ifdef SERVO
     case AO_SERVO:    // 
       setServo(pin,val);
+      break;
+#endif
+#ifdef STEPPER
+    case AO_STEPPER:    // 
+      pinsData[pin] = val;
       break;
 #endif
     }

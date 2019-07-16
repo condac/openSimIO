@@ -4,10 +4,6 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
-byte mac[] = {
-  0x5A, 0xAB, 0x10, 0x50, 0x7E, 0x57
-};
-IPAddress ip(192, 168, 0, 105);
 
 unsigned int localPort = 34555;      // local port to listen on
 
@@ -34,12 +30,13 @@ int setupEthernet() {
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     pcSerial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-    while (true) {
-      return 0;
-    }
+    
+    return 0;
+
   }
+  
   if (Ethernet.linkStatus() == LinkOFF) {
-    pcSerial.println("Ethernet cable is not connected.");
+    pcSerial.println("Ethernet cable is not connected."); // W5500 boards reports cable not connected even if it is
   }
 
   // start UDP

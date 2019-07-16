@@ -207,7 +207,7 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
     display("Error failed to bind socket");
 		return;
 	}
-
+/*
 	// Set timeout
   #ifdef IBM2
 	DWORD timeout = 100;
@@ -216,7 +216,7 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 1;
   #endif
-
+*/
   /*if (setsockopt(sock.sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
 		display("Error failed to set timeout");
 	}*/
@@ -336,4 +336,16 @@ int readUDP(udpSocket sock, char buffer[], int len) {
 		//display("Error reading socket");
 	}
 	return status;
+}
+
+
+int ifMessage(udpSocket sock){
+  fd_set rfd;
+  FD_ZERO(&rfd);
+  FD_SET(sock.sock, &rfd);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 0;
+  int ret = select(sock.sock+1, &rfd, NULL, NULL, &timeout);
+  return ret;
 }

@@ -1,44 +1,5 @@
-// ############
-// User configurations
-// ############
 
-
-// Uncomment the master or slave define, never both!
-#define MASTER
-//#define SLAVE
-
-#define MASTER_ID 1 // Change if you have more than one master board in your system
-
-#define PC_ID 99 // do not touch
-
-// Enable or disable the serial chain function. 
-#define SERIAL_CHAIN
-
-
-#define FRAMERATE 60
-
-// ############
-// Plugins
-// ############  IMPORTANT!!!! #########
-// To save program memory we only include functions that you know you will use. 
-// Uncomment the define statement for each plugin you need in your hardware
-
-// Use rotary encoders
-#define ROTARY_ENCODER
-
-// Use ethernet shield
-#define ETHERNET
-
-// Use TM1637 drivers fopr 7 segment displays
-#define TM1637
-
-// Servo
-#define SERVO
-
-// ############
-// End of plugins
-// ############
-
+#include "Config.h" // This file contains all user configurations you need to make
 
 #include "boards.h"
 #include "common.h"
@@ -72,6 +33,10 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #include "servo.h"
 #endif
 
+#ifdef STEPPER
+#include "steppermotors.h"
+#endif
+
 int myId = 0; // this will automaticly be set by the chain ping loop
 bool cts = true;
 bool unconfigured = true;
@@ -92,7 +57,7 @@ long pingtime;
 #define PING_INTERVAL 5000
 
 long refreshtime;
-#define REFRESH_INTERVAL 1000 // refresh interval
+#define REFRESH_TIME 1000 // refresh interval
 
 #ifdef TIME_DEBUG
 long looptime;
@@ -119,21 +84,36 @@ void setup() {
   Serial.begin(115200);
   pcSerial.println("boot");
   pcSerial.begin(115200);
+  
+    // disable SD card if one in the slot, this is needed on newer ethernet boards
+  pinMode(4,OUTPUT);
+  digitalWrite(4,HIGH);
+
+  #ifdef ETHERNET
+  while (setupEthernet() != 1) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH); 
+    delay(100); 
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+    digitalWrite(LED_BUILTIN, HIGH); 
+    delay(100); 
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+  }
+  Serial.println(Ethernet.localIP());
+  #endif
   #ifdef SERIAL_CHAIN
   chainSerial.begin(115200);
   #endif
   
-  #ifdef ETHERNET
-  while (setupEthernet() != 1) {
-    delay(100);
-  }
-  
-  #endif
+
 
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  //pinsConfig[2] = DI_4X4;
+  //pinsConfig[2] = AO_STEPPER;
+  //pinsData[2] = 1800;
   /*pinsConfig[3] = DO_LOW;
   pinsConfig[4] = DO_HIGH;
   pinsConfig[5] = DI_INPUT_PULLUP;
@@ -149,11 +129,15 @@ void setup() {
   pinsConfig[13] = DO_BOOL;*/
   //pinsConfig[DIGITAL_PIN_COUNT+1] = AI_FILTER;
   //pinsConfig[DIGITAL_PIN_COUNT+0] = AI_FILTER;
-  pcSerial.println("boot2");
+  
   
   setupDigitalPins();
+#ifdef STEPPER
+  setupStepper();
+  #endif
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
+  pcSerial.println("Starting version v0.0.3");
 }
 
 void loop() {
@@ -195,7 +179,7 @@ void loop() {
     //cyclicRefresh();
   }
   if (millis()>refreshtime) {
-    refreshtime = millis() + REFRESH_INTERVAL; 
+    refreshtime = millis() + REFRESH_TIME; 
     cyclicRefresh();
   }
   if (millis()>pingtime) {
@@ -218,7 +202,9 @@ void loop() {
                                 Serial.flush();
                                 chaintime = millis() - chaintime;
                                 #endif
-            
+   #ifdef STEPPER
+   stepperLoop();
+   #endif
             
                                 #ifdef TIME_DEBUG
                                       if (millis()>debugtime) {
