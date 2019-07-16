@@ -25,6 +25,8 @@
 //#endif
 
 // An opaque handle to the window we will create
+
+  #ifdef XPLM301
 static XPLMWindowID	g_window;
 
 // Callbacks we will register when we create our window
@@ -33,7 +35,7 @@ int					dummy_mouse_handler(XPLMWindowID in_window_id, int x, int y, int is_down
 XPLMCursorStatus	dummy_cursor_status_handler(XPLMWindowID in_window_id, int x, int y, void * in_refcon) { return xplm_CursorDefault; }
 int					dummy_wheel_handler(XPLMWindowID in_window_id, int x, int y, int wheel, int clicks, void * in_refcon) { return 0; }
 void				dummy_key_handler(XPLMWindowID in_window_id, char key, XPLMKeyFlags flags, char virtual_key, void * in_refcon, int losing_focus) { }
-
+#endif
 static float	MyFlightLoopCallback(float inElapsedSinceLastCall,float inElapsedTimeSinceLastFlightLoop, int inCounter, void* inRefcon);
 int readEthernetConfig( char* ip, int* port);
 
@@ -69,7 +71,7 @@ PLUGIN_API int XPluginStart(
 	strcpy(outDesc, "A plug-in for openSimIO.");
 
 
-
+  #ifdef XPLM301
 	XPLMCreateWindow_t params;
 	params.structSize = sizeof(params);
 	params.visible = 1;
@@ -85,12 +87,12 @@ PLUGIN_API int XPluginStart(
 	//
 	// Opt-in to styling our window like an X-Plane 11 native window
 	// If you're on XPLM300, not XPLM301, swap this enum for the literal value 1.
-  #ifdef XPLM301
+
 	params.handleRightClickFunc = dummy_mouse_handler;
 
 	params.layer = xplm_WindowLayerFloatingWindows;
   params.decorateAsFloatingWindow = xplm_WindowDecorationRoundRectangle;
-  #endif
+
 	// Set the window's initial bounds
 	// Note that we're not guaranteed that the main monitor's lower left is at (0, 0)...
 	// We'll need to query for the global desktop bounds!
@@ -102,7 +104,7 @@ PLUGIN_API int XPluginStart(
 	params.top = params.bottom + 200;
 
 	//g_window = XPLMCreateWindowEx(&params);
-
+  #endif
 	// Position the window as a "free" floating window, which the user can drag around
 	//XPLMSetWindowPositioningMode(g_window, xplm_WindowPositionFree, -1);
 	// Limit resizing our window: maintain a minimum width/height of 100 boxels and a max width/height of 300 boxels
@@ -204,8 +206,11 @@ PLUGIN_API int XPluginStart(
 PLUGIN_API void	XPluginStop(void)
 {
 	// Since we created the window, we'll be good citizens and clean it up
+
+	  #ifdef XPLM301
 	XPLMDestroyWindow(g_window);
 	g_window = NULL;
+#endif
 }
 
 PLUGIN_API void XPluginDisable(void) { }
