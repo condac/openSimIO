@@ -86,6 +86,7 @@ XPLM200—X-Plane 9.00 & newer
 
 void MyMenuHandlerCallback(void* inMenuRef, void* inItemRef);
 void reloadConfig();
+int readSerialConfig( char* port);
 
 // display.c
 extern int TeensyControls_show;

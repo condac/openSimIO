@@ -832,7 +832,7 @@ void sendDataToUDP(udpSocket sock) {
 				continue;
 			}
 			int type = XPLMGetDataRefTypes(pins[i].dataRef);
-			float outValue;
+			float outValue = 0.0;
       if (type == xplmType_Int) {
 				int temp = XPLMGetDatai(pins[i].dataRef);
 				outValue = temp;
