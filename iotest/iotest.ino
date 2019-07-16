@@ -57,7 +57,7 @@ long pingtime;
 #define PING_INTERVAL 5000
 
 long refreshtime;
-#define REFRESH_TIME 1000 // refresh interval
+//#define REFRESH_TIME 1000 // refresh interval
 
 #ifdef TIME_DEBUG
 long looptime;
@@ -178,10 +178,12 @@ void loop() {
     #endif
     //cyclicRefresh();
   }
+  #ifdef REFRESH_TIME
   if (millis()>refreshtime) {
     refreshtime = millis() + REFRESH_TIME; 
     cyclicRefresh();
   }
+  #endif
   if (millis()>pingtime) {
     pingtime = millis() + PING_INTERVAL; 
     ping();
