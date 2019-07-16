@@ -79,7 +79,7 @@ pin_struct* lineToStruct( char* line) {
 
   char modeString[128];
 
-  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%f;", &newPin->master,
+  int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%f;%f;", &newPin->master,
                                                                                          &newPin->slave,
                                                                                          &newPin->pinNameString,
 																																												 &newPin->pinExtra,
@@ -125,7 +125,7 @@ pin_struct* lineToStruct( char* line) {
   }
 
   //int conversionCount = sscanf(line, "%d.%d.%4[^;];%31[^;];%d;%f;%f;%f;", &newPin->master, &newPin->slave, pinNameString, ioTypeString, &newPin->reverse, &newPin->center, &newPin->pinMin, &newPin->pinMax);
-  if(conversionCount != 13) {
+  if(conversionCount != 14) {
       display("Error! converting config line %s", line);
       return NULL;
   } else {
