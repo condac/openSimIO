@@ -86,7 +86,9 @@ rm -f target/openSimIO.zip
 
 # Copy exampleconfigs
 cp example*.txt $TARGETDIR/
-zip -r $TARGETDIR $TARGETDIR/*
+cd target
+zip -r openSimIO openSimIO
+cd ..
 
 cp -r $TARGETDIR ~/.local/share/Steam/SteamApps/common/X-Plane\ 11/Resources/plugins/
 cp -r $TARGETDIR ~/.steam/steam/steamapps/common/X-Plane\ 11/Resources/plugins/
