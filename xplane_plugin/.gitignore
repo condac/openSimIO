@@ -2,3 +2,4 @@ SDK/*
 *.o
 *.xpl
 *.zip
+target/
