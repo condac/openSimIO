@@ -85,11 +85,13 @@ void setup() {
   pcSerial.println("boot");
   pcSerial.begin(115200);
   
-    // disable SD card if one in the slot, this is needed on newer ethernet boards
-  pinMode(4,OUTPUT);
-  digitalWrite(4,HIGH);
+
 
   #ifdef ETHERNET
+  // disable SD card if one in the slot, this is needed on newer ethernet boards
+  pinMode(4,OUTPUT);
+  digitalWrite(4,HIGH);
+  
   while (setupEthernet() != 1) {
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH); 

@@ -136,8 +136,7 @@
         #define BOARD "101"
     #else
        #error "Unknown board"
+       #pragma message(VAR_NAME_VALUE(BOARD))
     #endif
 
 #endif
-
-#pragma message(VAR_NAME_VALUE(BOARD))
