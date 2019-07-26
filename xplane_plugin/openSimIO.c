@@ -175,8 +175,9 @@ PLUGIN_API int XPluginStart(
     display("creating serialport %s ", sport);
 		char mode[]={'8','N','1',0};
 
-		if(RS232_OpenComport(cport_nr, bdrate, mode, 0))  {
-			display("Can not open comport\n");
+		cport_nr = RS232_OpenComport(sport, bdrate, mode, 0);
+		if(cport_nr == -1)  {
+			display("Error: Can not open comport %s\n", sport);
 
 		}
   }
@@ -503,10 +504,11 @@ int readEthernetConfig( char* ip, int* port) {
     XPLMDebugString("opening configfile\n");
     while ((read = getline(&line, &len, configFile)) != -1) {
       if (line[0] == '/') {
-        XPLMDebugString("Found ip in config");
-        display("Found ip in config");
+
         int res = sscanf(line, "/1;n;%s %d/", ip, port);
         if (res == 2) {
+					XPLMDebugString("Found ip in config");
+	        display("Found ip in config");
           XPLMDebugString("ethernet ok");
           return 1;
         }else {
@@ -534,10 +536,11 @@ int readSerialConfig( char* port) {
     XPLMDebugString("opening configfile\n");
     while ((read = getline(&line, &len, configFile)) != -1) {
       if (line[0] == '/') {
-        XPLMDebugString("Found serial in config");
-        display("Found serial in config");
-        int res = sscanf(line, "/1;s;%s/", port);
-        if (res == 2) {
+
+        int res = sscanf(line, "/1;s;%31[^;];", port);
+        if (res == 1) {
+					XPLMDebugString("Found serial in config");
+	        display("Found serial in config");
           XPLMDebugString("serial ok");
           return 1;
         }else {
