@@ -54,16 +54,16 @@ char *comports[RS232_PORTNR]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3
                        "/dev/cuau0","/dev/cuau1","/dev/cuau2","/dev/cuau3",
                        "/dev/cuaU0","/dev/cuaU1","/dev/cuaU2","/dev/cuaU3"};
 
-int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int flowctrl)
+int RS232_OpenComport(char* comport_name, int baudrate, const char *mode, int flowctrl)
 {
   int baudr,
       status;
-
-  if((comport_number>=RS232_PORTNR)||(comport_number<0))
-  {
-    printf("illegal comport number\n");
-    return(1);
-  }
+  int comport_number = 1;
+  // if((comport_number>=RS232_PORTNR)||(comport_number<0))
+  // {
+  //   printf("illegal comport number\n");
+  //   return(1);
+  // }
 
   switch(baudrate)
   {
@@ -194,11 +194,11 @@ http://pubs.opengroup.org/onlinepubs/7908799/xsh/termios.h.html
 http://man7.org/linux/man-pages/man3/termios.3.html
 */
 
-  Cport[comport_number] = open(comports[comport_number], O_RDWR | O_NOCTTY | O_NDELAY);
+  Cport[comport_number] = open(comport_name, O_RDWR | O_NOCTTY | O_NDELAY);
   if(Cport[comport_number]==-1)
   {
     perror("unable to open comport ");
-    return(1);
+    return(-1);
   }
 
   /* lock access so that another process can't also use the port */
@@ -206,7 +206,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
   {
     close(Cport[comport_number]);
     perror("Another process has locked the comport.");
-    return(1);
+    return(-1);
   }
 
   error = tcgetattr(Cport[comport_number], old_port_settings + comport_number);
@@ -215,7 +215,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
     close(Cport[comport_number]);
     flock(Cport[comport_number], LOCK_UN);  /* free the port so that others can use it. */
     perror("unable to read portsettings ");
-    return(1);
+    return(-1);
   }
   memset(&new_port_settings, 0, sizeof(new_port_settings));  /* clear the new struct */
 
@@ -240,7 +240,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
     close(Cport[comport_number]);
     flock(Cport[comport_number], LOCK_UN);  /* free the port so that others can use it. */
     perror("unable to adjust portsettings ");
-    return(1);
+    return(-1);
   }
 
 /* http://man7.org/linux/man-pages/man4/tty_ioctl.4.html */
@@ -250,7 +250,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
     tcsetattr(Cport[comport_number], TCSANOW, old_port_settings + comport_number);
     flock(Cport[comport_number], LOCK_UN);  /* free the port so that others can use it. */
     perror("unable to get portstatus");
-    return(1);
+    return(-1);
   }
 
   status |= TIOCM_DTR;    /* turn on DTR */
@@ -261,10 +261,10 @@ http://man7.org/linux/man-pages/man3/termios.3.html
     tcsetattr(Cport[comport_number], TCSANOW, old_port_settings + comport_number);
     flock(Cport[comport_number], LOCK_UN);  /* free the port so that others can use it. */
     perror("unable to set portstatus");
-    return(1);
+    return(-1);
   }
 
-  return(0);
+  return(comport_number);
 }
 
 
@@ -514,13 +514,15 @@ char *comports[RS232_PORTNR]={"\\\\.\\COM1",  "\\\\.\\COM2",  "\\\\.\\COM3",  "\
 char mode_str[128];
 
 
-int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int flowctrl)
+int RS232_OpenComport(char* comport_name, int baudrate, const char *mode, int flowctrl)
 {
-  if((comport_number>=RS232_PORTNR)||(comport_number<0))
-  {
-    printf("illegal comport number\n");
-    return(1);
-  }
+
+  int comport_number = 1;
+  // if((comport_number>=RS232_PORTNR)||(comport_number<0))
+  // {
+  //   printf("illegal comport number\n");
+  //   return(1);
+  // }
 
   switch(baudrate)
   {
@@ -563,14 +565,14 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int fl
     case 3000000 : strcpy(mode_str, "baud=3000000");
                    break;
     default      : printf("invalid baudrate\n");
-                   return(1);
+                   return(-1);
                    break;
   }
 
   if(strlen(mode) != 3)
   {
     printf("invalid mode \"%s\"\n", mode);
-    return(1);
+    return(-1);
   }
 
   switch(mode[0])
@@ -584,7 +586,7 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int fl
     case '5': strcat(mode_str, " data=5");
               break;
     default : printf("invalid number of data-bits '%c'\n", mode[0]);
-              return(1);
+              return(-1);
               break;
   }
 
@@ -600,7 +602,7 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int fl
     case 'o': strcat(mode_str, " parity=o");
               break;
     default : printf("invalid parity '%c'\n", mode[1]);
-              return(1);
+              return(-1);
               break;
   }
 
@@ -611,7 +613,7 @@ int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int fl
     case '2': strcat(mode_str, " stop=2");
               break;
     default : printf("invalid number of stop bits '%c'\n", mode[2]);
-              return(1);
+              return(-1);
               break;
   }
 
@@ -632,7 +634,7 @@ http://technet.microsoft.com/en-us/library/cc732236.aspx
 https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_dcb
 */
 
-  Cport[comport_number] = CreateFileA(comports[comport_number],
+  Cport[comport_number] = CreateFileA(comport_name,
                       GENERIC_READ|GENERIC_WRITE,
                       0,                          /* no share  */
                       NULL,                       /* no security */
@@ -643,7 +645,7 @@ https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_dcb
   if(Cport[comport_number]==INVALID_HANDLE_VALUE)
   {
     printf("unable to open comport\n");
-    return(1);
+    return(-1);
   }
 
   DCB port_settings;
@@ -654,7 +656,7 @@ https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_dcb
   {
     printf("unable to set comport dcb settings\n");
     CloseHandle(Cport[comport_number]);
-    return(1);
+    return(-1);
   }
 
   if(flowctrl)
@@ -667,7 +669,7 @@ https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_dcb
   {
     printf("unable to set comport cfg settings\n");
     CloseHandle(Cport[comport_number]);
-    return(1);
+    return(-1);
   }
 
   COMMTIMEOUTS Cptimeouts;
@@ -682,10 +684,10 @@ https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_dcb
   {
     printf("unable to set comport time-out settings\n");
     CloseHandle(Cport[comport_number]);
-    return(1);
+    return(-1);
   }
 
-  return(0);
+  return(comport_number);
 }
 
 

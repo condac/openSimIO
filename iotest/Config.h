@@ -12,7 +12,7 @@
 #define PC_ID 99 // do not touch
 
 // Enable or disable the serial chain function. 
-#define SERIAL_CHAIN
+//#define SERIAL_CHAIN
 
 
 #ifdef SLAVE
@@ -30,8 +30,9 @@
 // Use rotary encoders
 #define ROTARY_ENCODER
 
+
 // Use ethernet shield
-#define ETHERNET
+//#define ETHERNET
 #ifdef ETHERNET
 #include <Ethernet.h>
 byte mac[] = {
@@ -49,7 +50,7 @@ IPAddress ip(192, 168, 0, 105);
 // Stepper motors
 // NOTE! You need to configure steppermotors in steppermotors.h
 // There are just to many options to do this through the plugin
-#define STEPPER
+//#define STEPPER
 
 
 

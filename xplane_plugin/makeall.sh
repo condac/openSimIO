@@ -83,7 +83,12 @@ OS=WINDOWS64 CC=x86_64-w64-mingw32-gcc TARGET=$TARGETDIR/64/win.xpl make
 ##make clean
 
 rm -f target/openSimIO.zip
-##zip -r $TARGETDIR $TARGETDIR/*
+
+# Copy exampleconfigs
+cp example*.txt $TARGETDIR/
+cd target
+zip -r openSimIO openSimIO
+cd ..
 
 cp -r $TARGETDIR ~/.local/share/Steam/SteamApps/common/X-Plane\ 11/Resources/plugins/
 cp -r $TARGETDIR ~/.steam/steam/steamapps/common/X-Plane\ 11/Resources/plugins/
