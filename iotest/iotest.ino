@@ -57,7 +57,7 @@ long pingtime;
 #define PING_INTERVAL 5000
 
 long refreshtime;
-//#define REFRESH_TIME 1000 // refresh interval
+
 
 #ifdef TIME_DEBUG
 long looptime;

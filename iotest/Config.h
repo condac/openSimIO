@@ -21,6 +21,11 @@
 #define FRAMERATE 60
 #endif
 
+// Refresh interval. This will read and resend all inputs to fix issues where switches are in one position and xplane is reloaded and think it is another position
+// It will trigger a resend every ms defined by REFRESH_TIME but only for one value at the time. So if you have 20 inputs configured setting REFRESH_TIME to 1000 will take 20s for all values to have be resent.
+// If you want to be able to control switches from within the game and not have them overwritten uncomment this.
+#define REFRESH_TIME 1000 // refresh interval, comment out to disable
+
 // ############
 // Plugins
 // ############  IMPORTANT!!!! #########
@@ -41,7 +46,7 @@ byte mac[] = {
 IPAddress ip(192, 168, 0, 105);
 #endif
 
-// Use TM1637 drivers fopr 7 segment displays
+// Use TM1637 drivers for 7 segment displays
 #define TM1637
 
 // Servo
