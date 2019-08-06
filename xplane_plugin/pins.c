@@ -547,38 +547,7 @@ void setDigitalData(int i, int value) {
 
 }
 
-void setDigitalPin(int cport_nr,int pin, int value ) {
-	char out[512];
 
- // send digital data to arduino
-	if (pins[pin].output == 1) {
-		if (pins[pin].prevValue != value) {
-
-			int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
-			display("write serial:%s", out);
-      RS232_SendBuf(cport_nr, out, len+1);
-
-			pins[pin].prevValue = value;
-		}
-	}
-}
-void sendDataToArduino(int cport_nr) {
-
-	for (int i=0;i<nrOfPins;i++) {
-		if (pins[i].output == 1) {
-			int type = XPLMGetDataRefTypes(pins[i].dataRef);
-
-      if (type == xplmType_Int) {
-
-        setDigitalPin(cport_nr,i,XPLMGetDatai(pins[i].dataRef) );
-      } else if (type == xplmType_Float) {
-
-      } else if (type == xplmType_Double) {
-
-      }
-		}
-	}
-}
 
 void digitalButton(int i, int var) {
 	if (pins[i].xplaneExtra == 0) {
@@ -808,6 +777,23 @@ void sendConfigToEth(udpSocket sock) {
   }
 }
 
+
+void setDigitalPinSerial(int cport_nr,int pin, int value ) {
+	char out[512];
+
+ // send digital data to arduino
+	if (pins[pin].output == 1) {
+		if (pins[pin].prevValue != value) {
+
+			int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+			display("write serial:%s", out);
+      RS232_SendBuf(cport_nr, out, len+1);
+
+			pins[pin].prevValue = value;
+		}
+	}
+}
+
 void setDigitalPinEth(udpSocket sock,int pin, int value ) {
 	char out[512];
 
@@ -861,7 +847,81 @@ void sendDataToUDP(udpSocket sock) {
 		}
 	}
 }
+void handleOutputs(int serial, udpSocket netsocket) {
+	for (int i=0;i<nrOfPins;i++) {
+		if (pins[i].output == 1) {
+			if (pins[i].ioMode == DO_HIGH || pins[i].ioMode == DO_LOW) {
+				// do nothing
+				continue;
+			}
+			int type = XPLMGetDataRefTypes(pins[i].dataRef);
+			float outValue = 0.0;
+			if (type == xplmType_Int) {
+				int temp = XPLMGetDatai(pins[i].dataRef);
+				outValue = temp;
+				//setDigitalPinEth(sock,i, temp);
 
+			} else if (type == xplmType_Float) {
+				outValue = XPLMGetDataf(pins[i].dataRef);
+
+
+			} else if (type == xplmType_FloatArray) {
+				float readValue[1];
+				XPLMGetDatavf(pins[i].dataRef,readValue, pins[i].dataRefIndex, 1);
+				outValue = readValue[0];
+
+
+			} else if (type == xplmType_Double) {
+
+			}
+			pins[i].lastSimValue = outValue;
+			// Transform value
+			//int outValueInt = map(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].pinMin, pins[i].pinMax);
+			//outValueInt = mapValue(outValue, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, pins[i].xplaneExtra, pins[i].xplaneCenter);
+			int outValueInt = mapValue(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].xplaneCenter, pins[i].pinMin, pins[i].pinMax, pins[i].reverse, pins[i].xplaneExtra, pins[i].center);
+
+			switch (pins[i].ioMode) {
+				case DO_BOOL:    //
+
+					if (outValue > pins[i].xplaneMax) {
+						// turn light off if it is greater than xplaneMax
+
+						if (pins[i].reverse == 1) {
+							outValueInt = pins[i].pinMax;
+						} else {
+							outValueInt = pins[i].pinMin;
+						}
+					} else if (outValue > pins[i].xplaneMin) {
+						// Turn light on if above xplaneMax
+						if (pins[i].reverse == 1) {
+							outValueInt = pins[i].pinMin;
+						} else {
+							outValueInt = pins[i].pinMax;
+						}
+					}
+					else {
+						if (pins[i].reverse == 1) {
+							outValueInt = pins[i].pinMax;
+						} else {
+							outValueInt = pins[i].pinMin;
+						}
+					}
+
+					break;
+				default:
+					break;
+			}
+			// if ethernet or serial
+			if (useSerial == 1) {
+				setDigitalPinSerial(serial,i,outValueInt);
+			}
+			if (useEthernet == 1) {
+				setDigitalPinEth(netsocket,i,outValueInt);
+			}
+
+		}
+	}
+}
 
 void drawStatusDisplayInfo() {
 	statusClear();

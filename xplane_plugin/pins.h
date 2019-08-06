@@ -10,3 +10,7 @@ void drawStatusDisplayInfo();
 void setRawDataFromRef(XPLMDataRef dataRef, float value);
 void setStepLoop();
 void sendDataToArduino(int cport_nr);
+void handleOutputs(int serial, udpSocket netsocket);
+
+extern int useEthernet;
+extern int useSerial;
