@@ -880,6 +880,37 @@ void handleOutputs(int serial, udpSocket netsocket) {
 			//outValueInt = mapValue(outValue, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, pins[i].xplaneExtra, pins[i].xplaneCenter);
 			int outValueInt = mapValue(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].xplaneCenter, pins[i].pinMin, pins[i].pinMax, pins[i].reverse, pins[i].xplaneExtra, pins[i].center);
 
+			switch (pins[i].ioMode) {
+				case DO_BOOL:    //
+
+					if (outValue > pins[i].xplaneMax) {
+						// turn light off if it is greater than xplaneMax
+
+						if (pins[i].reverse == 1) {
+							outValueInt = pins[i].pinMax;
+						} else {
+							outValueInt = pins[i].pinMin;
+						}
+					} else if (outValue > pins[i].xplaneMin) {
+						// Turn light on if above xplaneMax
+						if (pins[i].reverse == 1) {
+							outValueInt = pins[i].pinMin;
+						} else {
+							outValueInt = pins[i].pinMax;
+						}
+					}
+					else {
+						if (pins[i].reverse == 1) {
+							outValueInt = pins[i].pinMax;
+						} else {
+							outValueInt = pins[i].pinMin;
+						}
+					}
+
+					break;
+				default:
+					break;
+			}
 			// if ethernet or serial
 			if (useSerial == 1) {
 				setDigitalPinSerial(serial,i,outValueInt);
