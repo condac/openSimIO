@@ -440,12 +440,14 @@ float	MyFlightLoopCallback( float inElapsedSinceLastCall,
 	    parseSerialInput(buf, n);
 
 	  }
-		sendDataToArduino(cport_nr);
+		//sendDataToArduino(cport_nr);
 		sendConfigToArduino(cport_nr);
 	}
 
+	handleOutputs(cport_nr, asock);
+
 	if (useEthernet == 1) {
-		sendDataToUDP(asock);
+		//sendDataToUDP(asock);
 	  //
 		sendConfigToEth(asock);
 
