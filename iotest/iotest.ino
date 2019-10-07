@@ -146,7 +146,7 @@ void setup() {
   #endif
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
-  pcSerial.println("Starting version v0.0.3");
+  pcSerial.println("Starting version v0.1.3");
 }
 
 void loop() {
