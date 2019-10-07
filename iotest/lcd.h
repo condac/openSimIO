@@ -2,7 +2,8 @@
 
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(12, 11, 5, 6, 3, 2);
+const int rs = 12, en = 11, d4 = 5, d5 = 6, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 #define LCD_MAX_REFRESH 500
 
@@ -27,12 +28,22 @@ void lcdLoop() {
     lcd.clear();
     lcd.setCursor(0, 0);
 
+// ########################## Modify you text in the LCD Display here #######################
+// We can use pin 2 3 5 6 11 12 to transfer data in int format that we can display. 
+
     lcd.print("Val1=");
     lcd.print(pinsData[2]);
 
     lcd.print("Val2=");
     lcd.print(pinsData[3]);
+
+    lcd.setCursor(0, 0);
     
+    lcd.print("Val3=");
+    lcd.print(pinsData[5]);
+
+    lcd.print("Val4=");
+    lcd.print(pinsData[6]);        
   }
   
 }
