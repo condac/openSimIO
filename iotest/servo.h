@@ -1,4 +1,4 @@
-#include <Servo.h>
+#include <Servo.h> // install "Servo by Michael Margolis, Arduino" from Arduino libraries
 
 #define NR_SERVOS DIGITAL_PIN_COUNT // 10 servos takes 27 bytes memory
 Servo myservos[NR_SERVOS];

@@ -299,7 +299,11 @@ void setupPins(int configArray[], int numberOfPins) {
       configArray[i+7] = NOTUSED;
       
       break;
-  
+#ifdef LCD
+    case AO_LCD:    // 
+      setupLCDpin(i);
+      break;
+#endif
     }
   }
 }
@@ -335,6 +339,11 @@ void setValue(int pin, int val) {
 #endif
 #ifdef STEPPER
     case AO_STEPPER:    // 
+      pinsData[pin] = val;
+      break;
+#endif
+#ifdef LCD
+    case AO_LCD:    // 
       pinsData[pin] = val;
       break;
 #endif

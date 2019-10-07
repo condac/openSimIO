@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <TM1637Display.h>
+#include <TM1637Display.h> // Install LM1637 by Avishay Orpaz from Arduno library manager or https://github.com/avishorp/TM1637
 
 
 

@@ -37,6 +37,10 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #include "steppermotors.h"
 #endif
 
+#ifdef LCD
+#include "lcd.h" // // Uses 934 bytes of program memory and 62 bytes of memory
+#endif
+
 int myId = 0; // this will automaticly be set by the chain ping loop
 bool cts = true;
 bool unconfigured = true;
@@ -137,6 +141,9 @@ void setup() {
 #ifdef STEPPER
   setupStepper();
   #endif
+  #ifdef LCD
+  setupLCD();
+  #endif
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   wdt_reset();
   pcSerial.println("Starting version v0.0.3");
@@ -209,6 +216,10 @@ void loop() {
    #ifdef STEPPER
    stepperLoop();
    #endif
+   
+  #ifdef LCD
+  lcdLoop();
+  #endif
             
                                 #ifdef TIME_DEBUG
                                       if (millis()>debugtime) {
