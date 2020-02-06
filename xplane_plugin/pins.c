@@ -513,6 +513,20 @@ void setDigitalData(int i, int value) {
 	  int setValue = value;
 	  //display("setDigitalData setting int %d %d", i, setValue);
     if (pins[i].dataRef != NULL)	{
+
+			if (pins[i].reverse == 1) {
+				if (value == 1) {
+					setValue = pins[i].xplaneMin;
+				} else {
+					setValue = pins[i].xplaneMax;
+				}
+			}else {
+				if (value == 1) {
+					setValue = pins[i].xplaneMax;
+				} else {
+					setValue = pins[i].xplaneMin;
+				}
+			}
       XPLMSetDatai(pins[i].dataRef,setValue);
     }
 		pins[i].lastSimValue = setValue;
@@ -553,21 +567,8 @@ void digitalButton(int i, int var) {
 	if (pins[i].xplaneExtra == 0) {
 		// on off switch
 		if (pins[i].dataRef != NULL) {
-			int set = 0;
-			if (pins[i].reverse == 1) {
-				if (var == 1) {
-					set = pins[i].xplaneMin;
-				} else {
-					set = pins[i].xplaneMax;
-				}
-			}else {
-				if (var == 1) {
-					set = pins[i].xplaneMax;
-				} else {
-					set = pins[i].xplaneMin;
-				}
-			}
-			setDigitalData(i, set);
+
+			setDigitalData(i, var);
 		}else if (pins[i].commandRef != NULL) {
 			pins[i].prevValue = var;
 			if (pins[i].reverse == 1) {
