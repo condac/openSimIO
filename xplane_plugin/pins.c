@@ -569,17 +569,22 @@ void digitalButton(int i, int var) {
 			}
 			setDigitalData(i, set);
 		}else if (pins[i].commandRef != NULL) {
+			pins[i].prevValue = var;
 			if (pins[i].reverse == 1) {
 				if (var == 1) {
 					XPLMCommandEnd(pins[i].commandRef);
+					pins[i].lastSimValue = 0;
 				} else {
 					XPLMCommandBegin(pins[i].commandRef);
+					pins[i].lastSimValue = 1;
 				}
 			}else {
 				if (var == 1) {
 					XPLMCommandBegin(pins[i].commandRef);
+					pins[i].lastSimValue = 1;
 				} else {
 					XPLMCommandEnd(pins[i].commandRef);
+					pins[i].lastSimValue = 0;
 				}
 			}
 
