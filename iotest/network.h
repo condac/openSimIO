@@ -18,6 +18,17 @@ IPAddress remote;
 
 int setupEthernet() {
   pcSerial.println("starting network");
+  pcSerial.print("mac ");
+  pcSerial.print(mac[0]);
+  pcSerial.print(mac[1]);
+  pcSerial.print(mac[2]);
+  pcSerial.print(mac[3]);
+  pcSerial.print(mac[4]);
+  pcSerial.println(mac[5]);
+  pcSerial.print("ip ");
+  pcSerial.println(ip);
+  
+  
   // start the Ethernet
   Ethernet.begin(mac, ip);
 

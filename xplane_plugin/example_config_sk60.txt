@@ -1,0 +1,95 @@
+﻿# Hash tag is considered a comment, can only be in beginning of sentence
+# You must fill in all fields even if analog scales is not used by digital inputs etc...
+# masterId.slaveId.Pin;iomode;reverse;center;pinMin;pinMax;xplaneDataRef;xplaneMin;xplaneMax;extraInfo;
+# example string:
+# 1.0.D5;1;0;0;0;1;sim/cockpit/switches/pitot_heat_on;0;1;0;
+# 1.0.A0;4;0;500;100;900;sim/joystick/yoke_pitch_ratio;-1.0;1.0;0;
+
+/1;n;192.168.0.33 34555/ # this tells it to use ethernet for the moment
+
+1.0.D13;129;0;0;0;0;sim/cockpit/switches/pitot_heat_on;0;0;1;0;
+
+
+# SK60
+## kabel1
+#sidroder
+1.0.A3;0;AI_RAW;0;489;0;900;sim/joystick/yoke_heading_ratio;0;-1.0;1.0;1;
+
+
+#skevroder
+1.0.A2;0;AI_RAW;0;475;40;890;sim/joystick/yoke_roll_ratio;0;-1.0;1.0;2;
+
+#höjdroder
+1.0.A1;0;AI_RAW;0;323;0;900;sim/joystick/yoke_pitch_ratio;0;-1.0;1.0;0;
+
+#gas höger
+1.0.A4;0;AI_RAW;1;531;110;630;sim/cockpit2/engine/actuators/throttle_ratio[1];0.1;0.0;1.0;0;
+
+#gas vänster
+1.0.A5;0;AI_RAW;1;493;90;590;sim/cockpit2/engine/actuators/throttle_ratio[0];0.1;0.0;1.0;0;
+
+1.0.A4;0;AI_RAW;1;675;650;700;sim/cockpit2/engine/actuators/mixture_ratio[1];0.5;0.0;1.0;0;
+1.0.A5;0;AI_RAW;1;675;650;700;sim/cockpit2/engine/actuators/mixture_ratio[0];0.5;0.0;1.0;0;
+# alternativ till gas sim/cockpit2/engine/actuators/throttle_ratio[]
+# variabel för all gas: sim/cockpit2/engine/actuators/throttle_ratio_all
+
+#höjdrodstrim
+1.0.D31;0;DI_INPUT_STEP;0;0.1;0;0;sim/flightmodel/controls/elv_trim;0;-1.0;1.0;0;
+1.0.D30;0;DI_INPUT_STEP;1;0.1;0;0;sim/flightmodel/controls/elv_trim;0;-1.0;1.0;0;
+
+## kabel2
+#noshjul
+# vi måste säga åt spelet att sluta svänga själv från roder input
+*sim/operation/override/override_wheel_steer;1;
+1.0.A0;0;AI_RAW;0;443;300;540;sim/flightmodel2/gear/tire_steer_command_deg[0];0;-30.0;30.0;3;
+
+## Luftbroms
+#ut
+1.0.D35;0;DI_INPUT_STEP;0;0.5;0;0;sim/cockpit2/controls/speedbrake_ratio;0.5;0;1;0;
+#in
+1.0.D34;0;DI_INPUT_STEP;1;0.5;0;0;sim/cockpit2/controls/speedbrake_ratio;0.5;0;1;0;
+
+#klaff specialfunktion för 2 pinnar
+1.0.D39;38;DI_3WAY_2;0;22.5;0;45;sim/flightmodel/controls/flaprqst;0.5;0.0;1.0;0;
+
+#avtryckare
+1.0.D43;0;DI_INPUT_PULLUP;0;0;0;1;sim/weapons/fire_any_shell;0.5;0;1;0;
+
+#broms höger
+#1.0.D42;0;DI_INPUT_PULLUP;0;0.5;0;1;sim/cockpit2/controls/right_brake_ratio;0.5;0;1;0;
+#broms vänster
+#1.0.D47;0;DI_INPUT_PULLUP;0;0.5;0;1;sim/cockpit2/controls/left_brake_ratio;0.5;0;1;0;
+#broms höger
+1.0.D42;0;DI_INPUT_PULLUP;0;0.5;0;1;sim/cockpit2/controls/parking_brake_ratio;0.5;0;1;0;
+#broms vänster
+1.0.D47;0;DI_INPUT_PULLUP;0;0.5;0;1;sim/cockpit2/controls/parking_brake_ratio;0.5;0;1;0;
+
+#släpp parkeringsbroms
+#1.0.D42;0;DI_INPUT_PULLUP;0;0.5;0;1;sim/cockpit2/controls/parking_brake_ratio;0;0;0;0;
+#1.0.D47;0;DI_INPUT_PULLUP;0;0.5;0;1;sim/cockpit2/controls/parking_brake_ratio;0;0;0;0;
+
+#broms höger Analog
+#1.0.A15;0;AI_FILTER;0;0.5;0;1;sim/cockpit2/controls/right_brake_ratio;0.5;0;1;0;
+#broms vänster Analog
+#1.0.A14;0;AI_FILTER;0;0.5;0;1;sim/cockpit2/controls/left_brake_ratio;0.5;0;1;0;
+
+
+# nav ljus
+1.0.D46;0;DI_INPUT_PULLUP;0;0;0;1;sim/cockpit/electrical/nav_lights_on;0.5;0;1;0;
+
+# strob ljus
+1.0.D49;0;DI_INPUT_PULLUP;0;0;0;1;sim/cockpit/electrical/strobe_lights_on;0.5;0;1;0;
+
+
+# taxi ljus
+1.0.D48;0;DI_INPUT_PULLUP;0;0;0;1;sim/cockpit/electrical/taxi_light_on;0.5;0;1;0;
+
+# landnings ljus
+1.0.D45;0;DI_INPUT_PULLUP;0;0;0;1;sim/cockpit/electrical/landing_lights_on;0.5;0;1;0;
+
+
+# landningsställ
+1.0.D26;0;DI_INPUT_PULLUP;0;0;0;1;sim/cockpit/switches/gear_handle_status;0.5;0;1;0;
+
+#1.0.D27;0;DI_INPUT_PULLUP;0;0.0;0;1;sim/flight_controls/landing_gear_up;0;0;1;1;
+#1.0.D26;0;DI_INPUT_PULLUP;0;0.0;0;1;sim/flight_controls/landing_gear_down;0;0;1;1;
