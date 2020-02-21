@@ -13,55 +13,55 @@
 #define PRINTF_ADDR "127.0.0.1"
 
 #if defined(MACOSX)
-#define APL 1
-#define IBM 0
-#define LIN 0
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/select.h>
-#include <pthread.h>
-#include <time.h>
-#include <sys/time.h>
-#include <IOKit/IOKitLib.h>
-#include <IOKit/hid/IOHIDLib.h>
-#include <IOKit/hid/IOHIDDevice.h>
+#   define APL 1
+#   define IBM 0
+#   define LIN 0
+#   include <unistd.h>
+#   include <sys/socket.h>
+#   include <netinet/in.h>
+#   include <arpa/inet.h>
+#   include <sys/select.h>
+#   include <pthread.h>
+#   include <time.h>
+#   include <sys/time.h>
+#   include <IOKit/IOKitLib.h>
+#   include <IOKit/hid/IOHIDLib.h>
+#   include <IOKit/hid/IOHIDDevice.h>
 #elif defined(LINUX)
-#define APL 0
-#define IBM 0
-#define LIN 1
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/select.h>
-#include <pthread.h>
-#include <time.h>
-#ifdef USE_PRINTF_DEBUG
-#include <execinfo.h>
-#endif
-#include <linux/hidraw.h>
+#   define APL 0
+#   define IBM 0
+#   define LIN 1
+#   include <unistd.h>
+#   include <sys/socket.h>
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <sys/ioctl.h>
+#   include <netinet/in.h>
+#   include <arpa/inet.h>
+#   include <sys/select.h>
+#   include <pthread.h>
+#   include <time.h>
+#   ifdef USE_PRINTF_DEBUG
+#      include <execinfo.h>
+#   endif
+#   include <linux/hidraw.h>
 #elif defined(WINDOWS) || defined(WINDOWS64)
-#define APL 0
-#define IBM 1
-#define LIN 0
-#ifndef WINVER
-#define WINVER 0x0500
-#endif
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0500
-#endif
+#   define APL 0
+#   define IBM 1
+#   define LIN 0
+#   ifndef WINVER
+#      define WINVER 0x0500
+#   endif
+#   ifndef _WIN32_WINNT
+#      define _WIN32_WINNT 0x0500
+#   endif
 //#include <winsock2.h>
-#include <windows.h>
+#   include <windows.h>
 //#include <ws2tcpip.h>
 //#include <winuser.h>
-#include <setupapi.h>
-#include <hidsdi.h>
-#include <dbt.h>
+#   include <setupapi.h>
+#   include <hidsdi.h>
+#   include <dbt.h>
 //#include "thread.h"
 #endif
 
@@ -76,7 +76,7 @@ XPLM200—X-Plane 9.00 & newer
 //#define XPLM300 1
 //#define XPLM301 1
 
-#include "XPLMDisplay.h" // download xplane SDK and put in SDK folder https://developer.x-plane.com/sdk/plugin-sdk-downloads/
+#include "XPLMDisplay.h"        // download xplane SDK and put in SDK folder https://developer.x-plane.com/sdk/plugin-sdk-downloads/
 #include "XPLMGraphics.h"
 #include "XPLMUtilities.h"
 #include "XPLMDataAccess.h"
@@ -84,14 +84,14 @@ XPLM200—X-Plane 9.00 & newer
 #include "XPLMMenus.h"
 
 
-void MyMenuHandlerCallback(void* inMenuRef, void* inItemRef);
+void MyMenuHandlerCallback(void *inMenuRef, void *inItemRef);
 void reloadConfig();
-int readSerialConfig( char* port);
+int readSerialConfig(char *port);
 
 // display.c
 extern int TeensyControls_show;
 #define display(...) (TeensyControls_show ? TeensyControls_display(__VA_ARGS__) : 0)
 void TeensyControls_display_init(void);
 void TeensyControls_display_toggle(void);
-int TeensyControls_display(const char *format, ...) __attribute__ ((format (printf, 1, 2)));;
+int TeensyControls_display(const char *format, ...) __attribute__ ((format(printf, 1, 2)));;
 int TeensyControls_display(const char *format, ...);
