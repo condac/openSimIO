@@ -180,7 +180,9 @@ udpSocket createUDPSocket(char *ipIn, int portIn) {
    // save ip
    strncpy(sock.ip, ipIn, 17);
    // save port
-   sock.port = portIn;
+   sock.port = 34555;           // portIn;
+
+   display("createUDPSocket %s %d", sock.ip, sock.port);
 
 
    sock.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -215,6 +217,7 @@ udpSocket createUDPSocket(char *ipIn, int portIn) {
       } */
    setnonblocking(sock);
 
+   sock.port = portIn;
 
    return sock;
 }
@@ -252,7 +255,7 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
    if (len <= 0) {
       return -1;
    }
-
+   display("sendUDP %s %d %s", socket.ip, socket.port, buffer);
    int res = sendto(socket.sock, buffer, len, 0, (const struct sockaddr *)&dest, sizeof(dest));
 
    if (res < 0) {

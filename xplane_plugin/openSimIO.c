@@ -1,6 +1,7 @@
 #include "openSimIO.h"
 #include "udp.h"
 #include "pins.h"
+#include "config.h"
 #include "rs232.h"
 #include "statusDisplay.h"
 // Downloaded from https://developer.x-plane.com/code-sample/hello-world-sdk-3/
@@ -46,15 +47,13 @@ void dummy_key_handler(XPLMWindowID in_window_id, char key, XPLMKeyFlags flags, 
 #endif
 static float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter,
                                   void *inRefcon);
-int readEthernetConfig(char *ip, int *port);
+
 
 static XPLMDataRef gDataRef = NULL;
 static XPLMDataRef testDataRef = NULL;
 
 int TeensyControls_show = 0;
 int statusDisplayShow = 0;
-int cport_nr = 16;              /* /dev/ttyS0 (COM1 on windows) */
-int bdrate = 115200;            /* 115200 baud */
 
 int slaveId = 0;
 float signal = 0.0;
@@ -62,11 +61,13 @@ float signal = 0.0;
 int useEthernet = 0;
 int useSerial = 0;
 
-udpSocket asock;
+extern master_struct masters[MAXMASTERS];
+
 
 void reloadConfig() {
    XPLMDebugString("reloadConfig\n");
    readConfig();
+
    sendConfigReset();
 }
 
@@ -151,37 +152,12 @@ PLUGIN_API int XPluginStart(char *outName, char *outSig, char *outDesc) {
 
    statusDisplayInit();
 
-   XPLMDebugString("read config");
+   XPLMDebugString("read config\n");
 
-   readConfig();
-   XPLMDebugString("read config done");
+   reloadConfig();
+   XPLMDebugString("read config done\n");
 
-   XPLMDebugString("read serial config");
-   char sport[32];
-   if (readSerialConfig(sport) == 1) {
-      useSerial = 1;
-      XPLMDebugString("serial 1");
-      display("creating serialport %s ", sport);
-      char mode[] = { '8', 'N', '1', 0 };
 
-      cport_nr = RS232_OpenComport(sport, bdrate, mode, 0);
-      if (cport_nr == -1) {
-         display("Error: Can not open comport %s\n", sport);
-
-      }
-   }
-   XPLMDebugString("serial done");
-
-   XPLMDebugString("ethernet");
-   char ip[18];
-   int port;
-   if (readEthernetConfig(ip, &port) == 1) {
-      XPLMDebugString("ethernet 1");
-      useEthernet = 1;
-      display("creating socket %s %d", ip, port);
-      asock = createUDPSocket(ip, port);
-   }
-   XPLMDebugString("ethernet done");
    //asock = createUDPSocket("192.168.0.105", 34555);
    /* Register our callback for once a second.  Positive intervals
     * are in seconds, negative are the negative of sim frames.  Zero
@@ -412,60 +388,51 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
    int n;
    char buf[4096];
 
-   if (useSerial == 1) {
-      n = RS232_PollComport(cport_nr, buf, 4095);
+   for (int i = 0; i < MAXMASTERS; i++) {
+      if (masters[i].type == IS_SERIAL) {
+         n = RS232_PollComport(masters[i].portNumber, buf, 4095);
 
-      if (n > 0) {
+         if (n > 0) {
 
-         buf[n] = '\0';         /* always put a "null" at the end of a string! */
-         if (ifCharInArray(buf, '}') == -1) {
-            // ONly half of message recieved or garbage
-            //display("received %i bytes: %s\n", n, (char *)buf);
-         }
-         parseSerialInput(buf, n);
-
-      }
-      //sendDataToArduino(cport_nr);
-      sendConfigToArduino(cport_nr);
-   }
-
-   handleOutputs(cport_nr, asock);
-
-   if (useEthernet == 1) {
-      //sendDataToUDP(asock);
-      //
-      sendConfigToEth(asock);
-
-      while (ifMessage(asock)) {
-         int res = readUDP(asock, buf, 4095);
-         //int test = ifMessage(asock);
-         if (res > 0) {
-            signal = elapsed;
-            buf[res] = '\0';
+            buf[n] = '\0';      /* always put a "null" at the end of a string! */
             if (ifCharInArray(buf, '}') == -1) {
                // ONly half of message recieved or garbage
                //display("received %i bytes: %s\n", n, (char *)buf);
-            } else {
-               //display("received udp %i bytes: %s\n", res, (char *)buf);
-               parseSerialInput(buf, res);
             }
+            parseSerialInput(buf, n);
+
          }
       }
+      if (masters[i].type == IS_ETH) {
 
-      // if( test > 0) {
-      //      display("udp que %d\n", test);
-      // }
-      if (signal < elapsed - 5.0) {
-         display("Error! no connection for 5s");
-         signal = elapsed;
-         sendConfigReset();
+         while (ifMessage(masters[i].socket)) {
+            int res = readUDP(masters[i].socket, buf, 4095);
+            //int test = ifMessage(asock);
+            if (res > 0) {
+               signal = elapsed;
+               buf[res] = '\0';
+               if (ifCharInArray(buf, '}') == -1) {
+                  // ONly half of message recieved or garbage
+                  //display("received %i bytes: %s\n", n, (char *)buf);
+               } else {
+                  //display("received udp %i bytes: %s\n", res, (char *)buf);
+                  parseSerialInput(buf, res);
+               }
+            }
+         }
+
+         if (signal < elapsed - 5.0) {
+            display("Error! no connection for 5s");
+            signal = elapsed;
+            sendConfigReset();
+         }
+
       }
-      // Tell the arduino that we are ready for next frame.
-      char out[10] = "*";
-      sendUDP(asock, out, sizeof(out));
-
-
    }
+   sendConfig();
+   handleOutputs();
+
+
 
    if (statusDisplayShow == 1) {
       drawStatusDisplayInfo();
@@ -475,68 +442,4 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
 
    /* Return 1.0 to indicate that we want to be called again in 1 second. */
    return 0.01;
-}
-
-
-int readEthernetConfig(char *ip, int *port) {
-   FILE *configFile;
-   if ((configFile = fopen("Resources/plugins/openSimIO/config.txt", "r")) == NULL) {
-      XPLMDebugString("Error! opening configfile\n");
-      display("Error! opening configfile");
-   } else {
-
-      char *line = NULL;
-      size_t len = 0;
-      ssize_t read;
-      XPLMDebugString("opening configfile\n");
-      while ((read = getline(&line, &len, configFile)) != -1) {
-         if (line[0] == '/') {
-
-            int res = sscanf(line, "/1;n;%s %d/", ip, port);
-            if (res == 2) {
-               XPLMDebugString("Found ip in config");
-               display("Found ip in config");
-               XPLMDebugString("ethernet ok");
-               return 1;
-            } else {
-               XPLMDebugString("ethernet error2");
-            }
-
-         }
-      }
-      fclose(configFile);
-   }
-   return -1;
-}
-
-
-int readSerialConfig(char *port) {
-   FILE *configFile;
-   if ((configFile = fopen("Resources/plugins/openSimIO/config.txt", "r")) == NULL) {
-      XPLMDebugString("Error! opening configfile\n");
-      display("Error! opening configfile");
-   } else {
-
-      char *line = NULL;
-      size_t len = 0;
-      ssize_t read;
-      XPLMDebugString("opening configfile\n");
-      while ((read = getline(&line, &len, configFile)) != -1) {
-         if (line[0] == '/') {
-
-            int res = sscanf(line, "/1;s;%31[^;];", port);
-            if (res == 1) {
-               XPLMDebugString("Found serial in config");
-               display("Found serial in config");
-               XPLMDebugString("serial ok");
-               return 1;
-            } else {
-               XPLMDebugString("serial error2");
-            }
-
-         }
-      }
-      fclose(configFile);
-   }
-   return -1;
 }

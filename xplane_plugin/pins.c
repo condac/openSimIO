@@ -9,38 +9,19 @@
 #include "statusDisplay.h"
 #include "iotypes.h"
 #include "pins.h"
+#include "config.h"
 
-typedef struct {
 
-   int master;
-   int slave;
-   int ioMode;
-   XPLMDataRef dataRef;
-   XPLMCommandRef commandRef;
-   int dataRefIndex;
-   int pinExtra;
-   float pinMin;
-   float pinMax;
-   float xplaneCenter;
-   float xplaneMin;
-   float xplaneMax;
-   float xplaneExtra;
-   float center;
-   int reverse;
-   int pinNr;
-   char pinNameString[10];
-   char dataRefString[512];
-   int output;
-   int prevValue;
-   float prevValueF;
-   float lastSimValue;
 
-} pin_struct;
 
-FILE *configFile;
+extern int useEthernet;
+extern int useSerial;
 
-int nrOfLines = 0;
-int nrOfPins = 0;
+extern int nrOfLines;           // from config.h
+extern int nrOfPins;            // from config.h
+
+extern master_struct masters[MAXMASTERS];
+
 float timeStep = 0;
 float timeLast = 0;
 
@@ -216,46 +197,8 @@ int64_t getline(char **restrict line, size_t * restrict len, FILE * restrict fp)
 #endif
 
 
-void readConfig() {
-   nrOfLines = 0;
-   nrOfPins = 0;
-   if ((configFile = fopen("Resources/plugins/openSimIO/config.txt", "r")) == NULL) {
-      display("Error! opening configfile");
 
-   } else {
 
-      char *line = NULL;
-      size_t len = 0;
-      ssize_t read;
-
-      while ((read = getline(&line, &len, configFile)) != -1) {
-         nrOfLines++;
-      }
-      fclose(configFile);
-
-      //display("lines in config file %d", nrOfLines);
-
-      pins = malloc(nrOfLines * sizeof(pin_struct));
-
-      if ((configFile = fopen("Resources/plugins/openSimIO/config.txt", "r")) == NULL) {
-         display("Error! opening configfile");
-
-      } else {
-         char *line = NULL;
-         size_t len = 0;
-         ssize_t read;
-         while ((read = getline(&line, &len, configFile)) != -1) {
-            //display("%s", line);
-            pin_struct *newPin = lineToStruct(line);
-            if (newPin != NULL) {
-               memcpy(pins + nrOfPins, newPin, sizeof(pin_struct));
-               nrOfPins++;
-            }
-         }
-      }
-   }
-
-}
 
 
 void setAnalogPin() {
@@ -757,42 +700,6 @@ void parseInputPin(char *data, int masterId, int slaveId) {
    }
 }
 
-int sendcount = 0;
-
-void sendConfigReset() {
-   sendcount = 0;
-}
-void sendConfigToArduino(int cport_nr) {
-   char out[512];
-
-   // send digital data to arduino
-   if (sendcount < nrOfPins) {
-      int i = sendcount;
-      sendcount++;
-      //{1;2;0;D3,1,0;A2,5,3;}
-      int len =
-         sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode,
-                 pins[i].pinExtra);
-      display("write serial:%s", out);
-      RS232_SendBuf(cport_nr, out, len + 1);
-   }
-}
-void sendConfigToEth(udpSocket sock) {
-   char out[512];
-
-   // send digital data to arduino
-   if (sendcount < nrOfPins) {
-      int i = sendcount;
-      sendcount++;
-      //{1;2;0;D3,1,0;A2,5,3;}
-      int len =
-         sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode,
-                 pins[i].pinExtra);
-      //display("write udp:%s", out);
-      sendUDP(sock, out, len + 1);
-      //RS232_SendBuf(cport_nr, out, len+1);
-   }
-}
 
 
 void setDigitalPinSerial(int cport_nr, int pin, int value) {
@@ -818,11 +725,28 @@ void setDigitalPinEth(udpSocket sock, int pin, int value) {
    if (pins[pin].output == 1) {
       if (pins[pin].prevValue != value) {
 
-         int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+         int len =
+            sprintf(out, "{%d;%d;0;%s=%d;}\0", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
          //display("write udp:%s", out);
 
          sendUDP(sock, out, sizeof(out));
          pins[pin].prevValue = value;
+      }
+   }
+}
+void setAnalogPinEth(udpSocket sock, int pin, float value) {
+   char out[512];
+
+   // send digital data to arduino
+   if (pins[pin].output == 1) {
+      if (pins[pin].prevValueF != value) {
+
+         int len =
+            sprintf(out, "{%d;%d;0;%s=%f;}\0", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+         //display("write udp:%s", out);
+
+         sendUDP(sock, out, sizeof(out));
+         pins[pin].prevValueF = value;
       }
    }
 }
@@ -864,7 +788,7 @@ void sendDataToUDP(udpSocket sock) {
       }
    }
 }
-void handleOutputs(int serial, udpSocket netsocket) {
+void handleOutputs() {
    for (int i = 0; i < nrOfPins; i++) {
       if (pins[i].output == 1) {
          if (pins[i].ioMode == DO_HIGH || pins[i].ioMode == DO_LOW) {
@@ -926,15 +850,29 @@ void handleOutputs(int serial, udpSocket netsocket) {
             }
 
             break;
+         case AO_TEXT:         //
+
+            if (masters[pins[i].master].type == IS_ETH) {
+
+               setAnalogPinEth(masters[pins[i].master].socket, i, outValue);
+            }
+            continue;
+
+            break;
          default:
+            outValueInt =
+               mapValue(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].xplaneCenter, pins[i].pinMin,
+                        pins[i].pinMax, pins[i].reverse, pins[i].xplaneExtra, pins[i].center);
+
             break;
          }
          // if ethernet or serial
-         if (useSerial == 1) {
-            setDigitalPinSerial(serial, i, outValueInt);
+
+         if (masters[pins[i].master].type == IS_SERIAL) {
+            setDigitalPinSerial(masters[pins[i].master].serialport, i, outValueInt);
          }
-         if (useEthernet == 1) {
-            setDigitalPinEth(netsocket, i, outValueInt);
+         if (masters[pins[i].master].type == IS_ETH) {
+            setDigitalPinEth(masters[pins[i].master].socket, i, outValueInt);
          }
 
       }

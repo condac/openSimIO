@@ -78,5 +78,9 @@ int getTypeFromString(char *string) {
    if (strcmp(string, "AO_STEPPER") == 0) {
       return 136;
    }
+   //#define AO_TEXT 137 // Raw text output
+   if (strcmp(string, "AO_TEXT") == 0) {
+      return 137;
+   }
    return 0;
 }
