@@ -1,27 +1,36 @@
 #include "openSimIO.h"
 #include "udp.h"
-
+#include "rs232.h"
 #include "pins.h"
 #include "config.h"
 
-extern pin_struct *pins;
 
-int nrOfLines = 0;
-int nrOfPins = 0;
 
-master_struct masters[MAXMASTERS];
+//master_struct masters[MAXMASTERS];
 
-char *filename = "Resources/plugins/MFD39/config.txt";
+char *filename = "Resources/plugins/openSimIO/config.txt";
 
 void readConfig() {
+   //masters = malloc(MAXMASTERS * sizeof(master_struct));
+   for (int i = 0; i < MAXMASTERS; i++) {
+      if (masters[i].type == IS_ETH) {
+         closeSocket(masters[i].socket);
+      }
+      masters[i].type = 0;
+   }
    nrOfLines = 0;
    nrOfPins = 0;
-
+   XPLMDebugString("openSimIO.readConfig: getNrOfLines\n");
    nrOfLines = getNrOfLines(filename);
-   int nrOfMasters = nrOfLines = getNrOfMasters(filename);
+   char test[100];
+   sprintf(test, "%d", nrOfLines);
+   XPLMDebugString(test);
+   XPLMDebugString("openSimIO.readConfig: getNrOfmasters\n");
+   int nrOfMasters = getNrOfMasters(filename);
    pins = malloc(nrOfLines * sizeof(pin_struct));
 
    if ((configFile = fopen(filename, "r")) == NULL) {
+      XPLMDebugString("openSimIO.readConfig: error opening configfile\n");
       display("Error! opening configfile");
 
    } else {
@@ -30,27 +39,30 @@ void readConfig() {
       ssize_t read;
       while ((read = getline(&line, &len, configFile)) != -1) {
          //display("%s", line);
+         XPLMDebugString("openSimIO.readConfig: lineToStruct\n");
+         XPLMDebugString(line);
          pin_struct *newPin = lineToStruct(line);
          if (newPin != NULL) {
+            XPLMDebugString("openSimIO.readConfig: lineToStruct memcpy\n");
             memcpy(pins + nrOfPins, newPin, sizeof(pin_struct));
             nrOfPins++;
          }
       }
    }
-   XPLMDebugString("MFD39: Creating sockets\n");
+   XPLMDebugString("openSimIO:openSimIO: Creating sockets\n");
    createSockets();
-   XPLMDebugString("MFD39: sockets Done\n");
+   XPLMDebugString("openSimIO:openSimIO: sockets Done\n");
 
-   XPLMDebugString("MFD39: Creating serialports\n");
+   XPLMDebugString("openSimIO:openSimIO: Creating serialports\n");
    createSerialPorts();
-   XPLMDebugString("MFD39: Done\n");
+   XPLMDebugString("openSimIO:openSimIO: Done\n");
 
 
 
 }
 
 int getNrOfLines(char *filename) {
-
+   int banan = 0;
    if ((configFile = fopen(filename, "r")) == NULL) {
       display("Error! opening configfile");
       return 0;
@@ -61,11 +73,12 @@ int getNrOfLines(char *filename) {
       ssize_t read;
 
       while ((read = getline(&line, &len, configFile)) != -1) {
-         nrOfLines++;
+         banan++;
       }
       fclose(configFile);
-      return nrOfLines;
+      return banan;
    }
+   return banan;
 }
 
 int getNrOfMasters(char *filename) {
@@ -82,25 +95,28 @@ int getNrOfMasters(char *filename) {
 
       while ((read = getline(&line, &len, configFile)) != -1) {
          if (line[0] == '/') {
+            XPLMDebugString("openSimIO.getNrOfMasters: line start with / \n");
             int nr = 0;
             char *type;
-            int res = sscanf(line, "/%d;%s;", &nr, type);
-            if (res == 2 && nr > 0 && nr < MAXMASTERS) {
+            //int res = sscanf(line, "/%d;%s;%*s", &nr, type);
+            nr = atoi(&line[1]);
 
-               if (type[0] == 'n') {
+            if (nr > 0 && nr < MAXMASTERS) {
+               XPLMDebugString("openSimIO.getNrOfMasters: found config line / \n");
+               if (line[3] == 'n') {
                   masters[nr].type = IS_ETH;
                   int nr2;
-                  res = sscanf(line, "/%d;n;%s %d/", &nr2, masters[nr].ip, &masters[nr].udpPort);
-                  if (res == 3) {
-                     XPLMDebugString("Found ip in config\n");
+                  int res2 = sscanf(line, "/%d;n;%s %d/", &nr2, masters[nr].ip, &masters[nr].udpPort);
+                  if (res2 == 3) {
+                     XPLMDebugString("openSimIO:Found ip in config\n");
                      returnMasters++;
                   }
-               } else if (type[0] == 's') {
+               } else if (line[3] == 's') {
                   masters[nr].type = IS_SERIAL;
                   int nr2;
-                  res = sscanf(line, "/%d;s;%31[^;];", &nr2, masters[nr].serialport);
-                  if (res == 2) {
-                     XPLMDebugString("Found serial in config\n");
+                  int res2 = sscanf(line, "/%d;s;%31[^;];", &nr2, masters[nr].serialport);
+                  if (res2 == 2) {
+                     XPLMDebugString("openSimIO:Found serial in config\n");
                      returnMasters++;
                   }
                }
@@ -116,25 +132,25 @@ int getNrOfMasters(char *filename) {
 int readEthernetConfig(char *ip, int *port) {
    FILE *configFile;
    if ((configFile = fopen(filename, "r")) == NULL) {
-      XPLMDebugString("Error! opening configfile\n");
+      XPLMDebugString("openSimIO:Error! opening configfile\n");
       display("Error! opening configfile");
    } else {
 
       char *line = NULL;
       size_t len = 0;
       ssize_t read;
-      XPLMDebugString("opening configfile\n");
+      XPLMDebugString("openSimIO:opening configfile\n");
       while ((read = getline(&line, &len, configFile)) != -1) {
          if (line[0] == '/') {
 
             int res = sscanf(line, "/1;n;%s %d/", ip, port);
             if (res == 2) {
-               XPLMDebugString("Found ip in config\n");
+               XPLMDebugString("openSimIO:Found ip in config\n");
                display("Found ip in config");
-               XPLMDebugString("ethernet ok\n");
+               XPLMDebugString("openSimIO:ethernet ok\n");
                return 1;
             } else {
-               XPLMDebugString("ethernet error2\n");
+               XPLMDebugString("openSimIO:ethernet error2\n");
             }
 
          }
@@ -148,25 +164,25 @@ int readEthernetConfig(char *ip, int *port) {
 int readSerialConfig(char *port) {
    FILE *configFile;
    if ((configFile = fopen(filename, "r")) == NULL) {
-      XPLMDebugString("Error! opening configfile\n");
+      XPLMDebugString("openSimIO:Error! opening configfile\n");
       display("Error! opening configfile");
    } else {
 
       char *line = NULL;
       size_t len = 0;
       ssize_t read;
-      XPLMDebugString("opening configfile\n");
+      XPLMDebugString("openSimIO:opening configfile\n");
       while ((read = getline(&line, &len, configFile)) != -1) {
          if (line[0] == '/') {
 
             int res = sscanf(line, "/1;s;%31[^;];", port);
             if (res == 1) {
-               XPLMDebugString("Found serial in config");
+               XPLMDebugString("openSimIO:Found serial in config");
                display("Found serial in config");
-               XPLMDebugString("serial ok");
+               XPLMDebugString("openSimIO:serial ok");
                return 1;
             } else {
-               XPLMDebugString("serial error2");
+               XPLMDebugString("openSimIO:serial error2");
             }
 
          }
@@ -181,7 +197,7 @@ void createSockets() {
       if (masters[i].type == IS_ETH) {
 
          masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
-
+         XPLMDebugString("openSimIO: created socket");
       }
 
    }
@@ -191,12 +207,12 @@ void createSerialPorts() {
    for (int i = 0; i < MAXMASTERS; i++) {
       if (masters[i].type == IS_SERIAL) {
 
-         masters[i].socket = createUDPSocket(masters[i].ip, masters[i].serialport);
+
          int bdrate = 115200;   /* 115200 baud */
          char mode[] = { '8', 'N', '1', 0 };
 
          masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0);
-
+         XPLMDebugString("openSimIO: created port");
          if (masters[i].portNumber == -1) {
             display("Error: Can not open comport %s\n", masters[i].serialport);
 
@@ -224,7 +240,7 @@ void sendConfig() {
          sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode,
                  pins[i].pinExtra);
 
-      display("write serial:%s", out);
+      display("write config:%s %s", out, masters[pins[i].master].ip);
       if (masters[pins[i].master].type == IS_SERIAL) {
 
          RS232_SendBuf(masters[pins[i].master].serialport, out, len + 1);

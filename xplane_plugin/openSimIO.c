@@ -1,3 +1,4 @@
+
 #include "openSimIO.h"
 #include "udp.h"
 #include "pins.h"
@@ -61,11 +62,15 @@ float signal = 0.0;
 int useEthernet = 0;
 int useSerial = 0;
 
-extern master_struct masters[MAXMASTERS];
+master_struct masters[MAXMASTERS];
 
+pin_struct *pins;
+
+int nrOfLines = 0;
+int nrOfPins = 0;
 
 void reloadConfig() {
-   XPLMDebugString("reloadConfig\n");
+   XPLMDebugString("openSimIO:reloadConfig\n");
    readConfig();
 
    sendConfigReset();
@@ -152,10 +157,10 @@ PLUGIN_API int XPluginStart(char *outName, char *outSig, char *outDesc) {
 
    statusDisplayInit();
 
-   XPLMDebugString("read config\n");
+   XPLMDebugString("openSimIO:read config\n");
 
    reloadConfig();
-   XPLMDebugString("read config done\n");
+   XPLMDebugString("openSimIO:read config done\n");
 
 
    //asock = createUDPSocket("192.168.0.105", 34555);
@@ -341,7 +346,7 @@ void parseSerialInput(char *data, int len) {
       }
       token2 = strstr(token, "98;");
       if (token2 != NULL) {
-         XPLMDebugString("reconfigure 98\n");
+         XPLMDebugString("openSimIO:reconfigure 98\n");
          display("reconfigure %s", data);
 
          //strncpy(slask, data, len);
@@ -378,7 +383,10 @@ char inputbuf[8200];
 
 float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter,
                            void *inRefcon) {
+
    /* The actual callback.  First we read the sim's time and the data. */
+   XPLMDebugString("openSimIO: flightloop\n");
+
    float elapsed = XPLMGetElapsedTime();
    setTimeStep(elapsed);
 
@@ -394,7 +402,7 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
 
          if (n > 0) {
 
-            buf[n] = '\0';      /* always put a "null" at the end of a string! */
+            buf[n] = '\0';      // always put a "null" at the end of a string!
             if (ifCharInArray(buf, '}') == -1) {
                // ONly half of message recieved or garbage
                //display("received %i bytes: %s\n", n, (char *)buf);
@@ -429,16 +437,12 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
 
       }
    }
-   sendConfig();
+   //sendConfig();
    handleOutputs();
-
-
 
    if (statusDisplayShow == 1) {
       drawStatusDisplayInfo();
    }
-   /* Write the data to a file. */
-   // display("Time=%f.\n",elapsed);
 
    /* Return 1.0 to indicate that we want to be called again in 1 second. */
    return 0.01;

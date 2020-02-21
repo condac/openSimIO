@@ -3,9 +3,6 @@
 
 FILE *configFile;
 
-#   define IS_ETH 1
-#   define IS_SERIAL 2
-#   define MAXMASTERS 10
 
 
 void readConfig();
@@ -18,16 +15,6 @@ void createSerialPorts();
 void sendConfig();
 void sendConfigReset();
 
-typedef struct {
 
-   int nr;
-   int type;
-   int udpPort;
-   char ip[18];
-   char serialport[32];
-   udpSocket socket;
-   int portNumber;
-
-} master_struct;
 
 #endif

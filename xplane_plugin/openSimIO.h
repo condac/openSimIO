@@ -83,11 +83,33 @@ XPLM200—X-Plane 9.00 & newer
 #include "XPLMProcessing.h"
 #include "XPLMMenus.h"
 
+#   define IS_ETH 1
+#   define IS_SERIAL 2
+#   define MAXMASTERS 10
+
+
+#include "udp.h"
+typedef struct {
+
+   int nr;
+   int type;
+   int udpPort;
+   char ip[18];
+   char serialport[32];
+   udpSocket socket;
+   int portNumber;
+
+} master_struct;
 
 void MyMenuHandlerCallback(void *inMenuRef, void *inItemRef);
 void reloadConfig();
 
+extern master_struct masters[MAXMASTERS];
+#include "pins.h"
+extern pin_struct *pins;
 
+extern int nrOfLines;
+extern int nrOfPins;
 // display.c
 extern int TeensyControls_show;
 #define display(...) (TeensyControls_show ? TeensyControls_display(__VA_ARGS__) : 0)

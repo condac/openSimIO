@@ -180,7 +180,7 @@ udpSocket createUDPSocket(char *ipIn, int portIn) {
    // save ip
    strncpy(sock.ip, ipIn, 17);
    // save port
-   sock.port = 34555;           // portIn;
+   sock.port = portIn+100;           // portIn;
 
    display("createUDPSocket %s %d", sock.ip, sock.port);
 
@@ -342,4 +342,8 @@ int ifMessage(udpSocket sock) {
    timeout.tv_usec = 0;
    int ret = select(sock.sock + 1, &rfd, NULL, NULL, &timeout);
    return ret;
+}
+
+void closeSocket(udpSocket sock) {
+   close(sock.sock);
 }

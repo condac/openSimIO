@@ -17,10 +17,10 @@
 extern int useEthernet;
 extern int useSerial;
 
-extern int nrOfLines;           // from config.h
-extern int nrOfPins;            // from config.h
+//extern int nrOfLines;           // from config.h
+//extern int nrOfPins;            // from config.h
 
-extern master_struct masters[MAXMASTERS];
+//extern master_struct masters[MAXMASTERS];
 
 float timeStep = 0;
 float timeLast = 0;
@@ -36,21 +36,21 @@ pin_struct *lineToStruct(char *line) {
    }
    if ((line[0] == '*')) {
       // one time dataref set
-      XPLMDebugString("read *\n");
+      XPLMDebugString("openSimIO:read *\n");
       char dataref[512];
       float value;
       int c = sscanf(line, "*%512[^;];%f;", dataref, &value);
       if (c == 2) {
-         XPLMDebugString("find dataref *\n");
+         XPLMDebugString("openSimIO:find dataref *\n");
          XPLMDataRef dataRef = XPLMFindDataRef(dataref);
 
          if (dataRef != NULL) {
-            XPLMDebugString("set onetime");
+            XPLMDebugString("openSimIO:set onetime");
             setRawDataFromRef(dataRef, value);
             display("overiding %s %f", dataref, value);
          }
       } else {
-         XPLMDebugString("error *\n");
+         XPLMDebugString("openSimIO:error *\n");
       }
 
       return NULL;
@@ -447,13 +447,13 @@ void setStepLoop() {
 void setDigitalData(int i, int value) {
 
    pins[i].prevValue = value;
-   //XPLMDebugString("setDigitalData\n");
+   //XPLMDebugString("openSimIO:setDigitalData\n");
 
    int type = XPLMGetDataRefTypes(pins[i].dataRef);
 
    if (type == xplmType_Int) {
 
-      //XPLMDebugString("setDigitalData int %d\n");
+      //XPLMDebugString("openSimIO:setDigitalData int %d\n");
       int setValue = value;
       //display("setDigitalData setting int %d %d", i, setValue);
       if (pins[i].dataRef != NULL) {
@@ -475,7 +475,7 @@ void setDigitalData(int i, int value) {
       }
       pins[i].lastSimValue = setValue;
    } else if (type == xplmType_Float) {
-      //XPLMDebugString("setDigitalData float\n");
+      //XPLMDebugString("openSimIO:setDigitalData float\n");
       float setValue =
          mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax,
                   pins[i].reverse, 1, pins[i].xplaneCenter);
@@ -491,7 +491,7 @@ void setDigitalData(int i, int value) {
       XPLMSetDatad(pins[i].dataRef, setValue[0]);
       pins[i].lastSimValue = setValue[0];
    } else if (type == xplmType_FloatArray) {
-      //XPLMDebugString("setDigitalData float array\n");
+      //XPLMDebugString("openSimIO:setDigitalData float array\n");
       float setValue[1];
       setValue[0] =
          mapValue(value, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax,
@@ -500,7 +500,7 @@ void setDigitalData(int i, int value) {
       XPLMSetDatavf(pins[i].dataRef, setValue, pins[i].dataRefIndex, 1);
       pins[i].lastSimValue = setValue[0];
    } else if (type == xplmType_IntArray) {
-      //XPLMDebugString("setDigitalData int array\n");
+      //XPLMDebugString("openSimIO:setDigitalData int array\n");
       int setValue[1];
       setValue[0] = (int)value;
       //display("setDigitalData setting int %s %d", i, setValue[0]);
@@ -638,7 +638,7 @@ void parseInputPin(char *data, int masterId, int slaveId) {
                   setDigitalData(i, var * pins[i].center);
                   break;
                case DI_3WAY_2: //
-                  //XPLMDebugString("3way switch\n");
+                  //XPLMDebugString("openSimIO:3way switch\n");
                   setAnalogData(i, var);
                   break;
                case DI_4X4:    //
@@ -783,7 +783,7 @@ void sendDataToUDP(udpSocket sock) {
          int outValueInt = map(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].pinMin, pins[i].pinMax);
 
          // if ethernet or serial
-         setDigitalPinEth(sock, i, outValueInt);
+         setDigitalPinEth(masters[pins[i].master].socket, i, outValueInt);
 
       }
    }
