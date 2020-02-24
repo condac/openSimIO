@@ -56,8 +56,9 @@ extern "C" {
 
 #   else
 
-#      include <windows.h>
-
+#      if defined(WINDOWS64)
+#         include <windows.h>
+#      endif
 #   endif
 
    int RS232_OpenComport(char *, int, const char *, int);

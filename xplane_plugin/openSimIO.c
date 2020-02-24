@@ -57,7 +57,7 @@ int TeensyControls_show = 0;
 int statusDisplayShow = 0;
 
 int slaveId = 0;
-float signal = 0.0;
+float lastSignal = 0.0;
 
 int useEthernet = 0;
 int useSerial = 0;
@@ -346,13 +346,13 @@ void parseSerialInput(char *data, int len) {
       }
       token2 = strstr(token, "98;");
       if (token2 != NULL) {
-         XPLMDebugString("openSimIO:reconfigure 98\n");
+         XPLMDebugString("reconfigure 98\n");
          display("reconfigure %s", data);
 
          //strncpy(slask, data, len);
          //slaveId = getSlaveId(slask);
          //parseMessage(data);
-         if (signal > 5.0) {
+         if (lastSignal > 5.0) {
             reloadConfig();
          }
          //display("id for me %d %s",id,  data);
@@ -417,7 +417,7 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
             int res = readUDP(masters[i].socket, buf, 4095);
             //int test = ifMessage(asock);
             if (res > 0) {
-               signal = elapsed;
+               lastSignal = elapsed;
                buf[res] = '\0';
                if (ifCharInArray(buf, '}') == -1) {
                   // ONly half of message recieved or garbage
@@ -429,9 +429,9 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
             }
          }
 
-         if (signal < elapsed - 5.0) {
+         if (lastSignal < elapsed - 5.0) {
             display("Error! no connection for 5s");
-            signal = elapsed;
+            lastSignal = elapsed;
             sendConfigReset();
          }
 
