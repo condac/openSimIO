@@ -255,7 +255,7 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
    if (len <= 0) {
       return -1;
    }
-   display("sendUDP %s %d %s", socket.ip, socket.port, buffer);
+   //display("sendUDP %s %d %s", socket.ip, socket.port, buffer);
    int res = sendto(socket.sock, buffer, len, 0, (const struct sockaddr *)&dest, sizeof(dest));
 
    if (res < 0) {

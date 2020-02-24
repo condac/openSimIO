@@ -390,7 +390,7 @@ float getRawDataF(int i) {
       return XPLMGetDataf(pins[i].dataRef);
    } else if (type == xplmType_Double) {
       //display("setAnalogData setting double %s %f", pinName, setValue);
-      XPLMGetDatad(pins[i].dataRef);
+      return XPLMGetDatad(pins[i].dataRef);
    } else if (type == xplmType_FloatArray) {
       float readValue[1];
 
@@ -804,7 +804,7 @@ void handleOutputs() {
 
          } else if (type == xplmType_Float) {
             outValue = XPLMGetDataf(pins[i].dataRef);
-
+            //display("handleoutput float :%f ", outValue);
 
          } else if (type == xplmType_FloatArray) {
             float readValue[1];
@@ -813,7 +813,15 @@ void handleOutputs() {
 
 
          } else if (type == xplmType_Double) {
-
+            double outValue2 = XPLMGetDatad(pins[i].dataRef);
+            outValue = (float) outValue2;
+            //display("handleoutput double :%f %f", outValue2, outValue);
+         } else if (type == 6) {
+            double outValue2 = XPLMGetDatad(pins[i].dataRef);
+            outValue = (float) outValue2;
+            //display("handleoutput double6 :%f %f", outValue2, outValue);
+         } else {
+            display("handleoutput else :%s %d", pins[i].pinNameString, type);
          }
          pins[i].lastSimValue = outValue;
          // Transform value
