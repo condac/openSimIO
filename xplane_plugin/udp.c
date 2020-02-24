@@ -189,7 +189,7 @@ udpSocket createUDPSocket(char *ipIn, int portIn) {
 
    if (sock.sock == -1) {
       display("Error failed to create socket");
-      return;
+      return sock;
    }
    // bind to port
    struct sockaddr_in recvaddr;
@@ -200,7 +200,7 @@ udpSocket createUDPSocket(char *ipIn, int portIn) {
    if (bind(sock.sock, (struct sockaddr *)&recvaddr, sizeof(recvaddr)) == -1) {
 
       display("Error failed to bind socket");
-      return;
+      return sock;
    }
 /*
 	// Set timeout
@@ -253,9 +253,10 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
    inet_pton(AF_INET, socket.ip, &dest.sin_addr.s_addr);
 
    if (len <= 0) {
+      //display("sendUDP len0 %s %d %s %d", socket.ip, socket.port, buffer, len);
       return -1;
    }
-   //display("sendUDP %s %d %s", socket.ip, socket.port, buffer);
+   //display("sendUDP %s %d %s %d", socket.ip, socket.port, buffer, len);
    int res = sendto(socket.sock, buffer, len, 0, (const struct sockaddr *)&dest, sizeof(dest));
 
    if (res < 0) {

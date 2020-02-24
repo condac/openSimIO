@@ -61,14 +61,14 @@ pin_struct *lineToStruct(char *line) {
 
    int conversionCount = sscanf(line, "%d.%d.%4[^;];%d;%128[^;];%d;%f;%f;%f;%512[^;];%f;%f;%f;%f;", &newPin->master,
                                 &newPin->slave,
-                                &newPin->pinNameString,
+                                newPin->pinNameString,
                                 &newPin->pinExtra,
                                 modeString,
                                 &newPin->reverse,
                                 &newPin->center,
                                 &newPin->pinMin,
                                 &newPin->pinMax,
-                                &newPin->dataRefString,
+                                newPin->dataRefString,
                                 &newPin->xplaneCenter,
                                 &newPin->xplaneMin,
                                 &newPin->xplaneMax,
@@ -726,10 +726,10 @@ void setDigitalPinEth(udpSocket sock, int pin, int value) {
       if (pins[pin].prevValue != value) {
 
          int len =
-            sprintf(out, "{%d;%d;0;%s=%d;}\0", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+            sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
          //display("write udp:%s", out);
 
-         sendUDP(sock, out, sizeof(out));
+         sendUDP(sock, out, len+1);
          pins[pin].prevValue = value;
       }
    }
@@ -742,10 +742,10 @@ void setAnalogPinEth(udpSocket sock, int pin, float value) {
       if (pins[pin].prevValueF != value) {
 
          int len =
-            sprintf(out, "{%d;%d;0;%s=%f;}\0", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
-         //display("write udp:%s", out);
+            sprintf(out, "{%d;%d;0;%s=%f;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+         //display("awrite udp:%s", out);
 
-         sendUDP(sock, out, sizeof(out));
+         sendUDP(sock, out, len+1);
          pins[pin].prevValueF = value;
       }
    }
@@ -877,7 +877,7 @@ void handleOutputs() {
          // if ethernet or serial
 
          if (masters[pins[i].master].type == IS_SERIAL) {
-            setDigitalPinSerial(masters[pins[i].master].serialport, i, outValueInt);
+            setDigitalPinSerial(masters[pins[i].master].portNumber, i, outValueInt);
          }
          if (masters[pins[i].master].type == IS_ETH) {
             setDigitalPinEth(masters[pins[i].master].socket, i, outValueInt);

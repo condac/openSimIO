@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <stdio.h>
 #include "openSimIO.h"
 #include "udp.h"
 #include "rs232.h"
@@ -27,6 +29,7 @@ void readConfig() {
    XPLMDebugString(test);
    XPLMDebugString("openSimIO.readConfig: getNrOfmasters\n");
    int nrOfMasters = getNrOfMasters(filename);
+   nrOfMasters = nrOfMasters; // unused
    pins = malloc(nrOfLines * sizeof(pin_struct));
 
    if ((configFile = fopen(filename, "r")) == NULL) {
@@ -97,7 +100,7 @@ int getNrOfMasters(char *filename) {
          if (line[0] == '/') {
             XPLMDebugString("openSimIO.getNrOfMasters: line start with / \n");
             int nr = 0;
-            char *type;
+
             //int res = sscanf(line, "/%d;%s;%*s", &nr, type);
             nr = atoi(&line[1]);
 
@@ -243,7 +246,7 @@ void sendConfig() {
       display("write config:%s %s", out, masters[pins[i].master].ip);
       if (masters[pins[i].master].type == IS_SERIAL) {
 
-         RS232_SendBuf(masters[pins[i].master].serialport, out, len + 1);
+         RS232_SendBuf(masters[pins[i].master].portNumber, out, len + 1);
       }
       if (masters[pins[i].master].type == IS_ETH) {
          sendUDP(masters[pins[i].master].socket, out, len + 1);

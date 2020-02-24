@@ -215,12 +215,13 @@ void draw_hello_world(XPLMWindowID in_window_id, void *in_refcon) {
 
 void MyMenuHandlerCallback(void *inMenuRef, void *inItemRef) {
    //display("%d",(int)inItemRef);
-   if (inItemRef == 1) {
+   int incommand = (int) inItemRef;
+   if (incommand == 1) {
       // toggle console
       TeensyControls_show = !TeensyControls_show;
       TeensyControls_display_toggle();
    }
-   if (inItemRef == 2) {
+   if (incommand == 2) {
       // set pitot
       if (gDataRef != NULL) {
          /* We read the data ref, add the increment and set it again.
@@ -228,7 +229,7 @@ void MyMenuHandlerCallback(void *inMenuRef, void *inItemRef) {
          XPLMSetDatai(gDataRef, 1);
       }
    }
-   if (inItemRef == 3) {
+   if (incommand == 3) {
       // set pitot
       if (gDataRef != NULL) {
          /* We read the data ref, add the increment and set it again.
@@ -236,11 +237,11 @@ void MyMenuHandlerCallback(void *inMenuRef, void *inItemRef) {
          XPLMSetDatai(gDataRef, 0);
       }
    }
-   if (inItemRef == 4) {
+   if (incommand == 4) {
       reloadConfig();
       sendConfigReset();
    }
-   if (inItemRef == 5) {
+   if (incommand == 5) {
       if (statusDisplayShow == 0) {
          statusDisplayShow = 1;
       } else {
