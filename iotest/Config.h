@@ -57,6 +57,11 @@ IPAddress ip(192, 168, 0, 105);
 // There are just to many options to do this through the plugin
 //#define STEPPER
 
+// LCD
+// NOTE! You need to configure LCD in lcd.h
+// There are just to many options to do this through the plugin
+//#define LCD
+
 
 
 // ############

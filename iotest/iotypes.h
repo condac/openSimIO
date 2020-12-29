@@ -20,3 +20,4 @@
 #define DO_TM1637_DEC 135 // Display decimal number
 #define DI_4X4 16 // 4x4 key matrix
 #define AO_STEPPER 136 // Stepper motor
+#define AO_LCD 137 // LCD Display

@@ -31,57 +31,56 @@
 
 
 #ifndef rs232_INCLUDED
-#define rs232_INCLUDED
+#   define rs232_INCLUDED
 
-#ifdef __cplusplus
+#   ifdef __cplusplus
 extern "C" {
-#endif
+#   endif
 
-#include <stdio.h>
-#include <string.h>
+#   include <stdio.h>
+#   include <string.h>
 
 
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#   if defined(__linux__) || defined(__FreeBSD__)
 
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <limits.h>
-#include <sys/file.h>
-#include <errno.h>
+#      include <termios.h>
+#      include <sys/ioctl.h>
+#      include <unistd.h>
+#      include <fcntl.h>
+#      include <sys/types.h>
+#      include <sys/stat.h>
+#      include <limits.h>
+#      include <sys/file.h>
+#      include <errno.h>
 
-#else
+#   else
 
-#if defined(WINDOWS64)
-#include <windows.h>
-#endif
-#endif
+#      if defined(WINDOWS64)
+#         include <windows.h>
+#      endif
+#   endif
 
-int RS232_OpenComport(char *, int, const char *, int);
-int RS232_PollComport(int,  char *, int);
-int RS232_SendByte(int,  char);
-int RS232_SendBuf(int,  char *, int);
-void RS232_CloseComport(int);
-void RS232_cputs(int, const char *);
-int RS232_IsDCDEnabled(int);
-int RS232_IsRINGEnabled(int);
-int RS232_IsCTSEnabled(int);
-int RS232_IsDSREnabled(int);
-void RS232_enableDTR(int);
-void RS232_disableDTR(int);
-void RS232_enableRTS(int);
-void RS232_disableRTS(int);
-void RS232_flushRX(int);
-void RS232_flushTX(int);
-void RS232_flushRXTX(int);
-int RS232_GetPortnr(const char *);
+   int RS232_OpenComport(char *, int, const char *, int);
+   int RS232_PollComport(int, char *, int);
+   int RS232_SendByte(int, char);
+   int RS232_SendBuf(int, char *, int);
+   void RS232_CloseComport(int);
+   void RS232_cputs(int, const char *);
+   int RS232_IsDCDEnabled(int);
+   int RS232_IsRINGEnabled(int);
+   int RS232_IsCTSEnabled(int);
+   int RS232_IsDSREnabled(int);
+   void RS232_enableDTR(int);
+   void RS232_disableDTR(int);
+   void RS232_enableRTS(int);
+   void RS232_disableRTS(int);
+   void RS232_flushRX(int);
+   void RS232_flushTX(int);
+   void RS232_flushRXTX(int);
+   int RS232_GetPortnr(const char *);
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
+#   ifdef __cplusplus
+}                               /* extern "C" */
+#   endif
 #endif

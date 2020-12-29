@@ -48,7 +48,7 @@
 ##OSXSDK=~/src/osxcross/target/SDK/MacOSX10.10.sdk
 
 # echo commands
-set -x
+#set -x
 
 # set name and location of output directory
 TARGETDIR=target/openSimIO
@@ -64,16 +64,16 @@ mkdir $TARGETDIR/64
 ##OS=LINUX CFLAGS=-m32 LDFLAGS=-m32 TARGET=$TARGETDIR/32/lin.xpl make
 
 # build Linux64 version
-make clean
-OS=LINUX CFLAGS=-m64 LDFLAGS=-m64 TARGET=$TARGETDIR/64/lin.xpl make
+make -s clean
+OS=LINUX CFLAGS=-m64 LDFLAGS=-m64 TARGET=$TARGETDIR/64/lin.xpl make -s
 
 # build Windows32 version
 ##make clean
 ##OS=WINDOWS CC=i686-w64-mingw32-gcc TARGET=$TARGETDIR/32/win.xpl make
 
 # build Windows64 version
-make clean
-OS=WINDOWS64 CC=x86_64-w64-mingw32-gcc TARGET=$TARGETDIR/64/win.xpl make
+make -s clean
+OS=WINDOWS64 CC=x86_64-w64-mingw32-gcc TARGET=$TARGETDIR/64/win.xpl make -s
 
 # build hybrid OSX version
 ##make clean
@@ -87,7 +87,7 @@ rm -f target/openSimIO.zip
 # Copy exampleconfigs
 cp example*.txt $TARGETDIR/
 cd target
-zip -r openSimIO openSimIO
+zip -q -r openSimIO openSimIO
 cd ..
 
 cp -r $TARGETDIR ~/.local/share/Steam/SteamApps/common/X-Plane\ 11/Resources/plugins/

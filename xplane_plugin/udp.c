@@ -11,66 +11,58 @@
 #define NS_INT16SZ   2
 
 #if defined(WINDOWS) || defined(WINDOWS64)
-int inet_pton(int af, const char *src, char *dst)
-{
-    switch (af)
-    {
-    case AF_INET:
-        return inet_pton4(src, dst);
-    //case AF_INET6:
-    //    return inet_pton6(src, dst);
-    default:
-        return -1;
-    }
+int inet_pton(int af, const char *src, char *dst) {
+   switch (af) {
+   case AF_INET:
+      return inet_pton4(src, dst);
+      //case AF_INET6:
+      //    return inet_pton6(src, dst);
+   default:
+      return -1;
+   }
 }
 #endif
 
-int inet_pton4(const char *src, char *dst)
-{
-    uint8_t tmp[NS_INADDRSZ], *tp;
+int inet_pton4(const char *src, char *dst) {
+   uint8_t tmp[NS_INADDRSZ], *tp;
 
-    int saw_digit = 0;
-    int octets = 0;
-    *(tp = tmp) = 0;
+   int saw_digit = 0;
+   int octets = 0;
+   *(tp = tmp) = 0;
 
-    int ch;
-    while ((ch = *src++) != '\0')
-    {
-        if (ch >= '0' && ch <= '9')
-        {
-            uint32_t n = *tp * 10 + (ch - '0');
+   int ch;
+   while ((ch = *src++) != '\0') {
+      if (ch >= '0' && ch <= '9') {
+         uint32_t n = *tp * 10 + (ch - '0');
 
-            if (saw_digit && *tp == 0)
-                return 0;
-
-            if (n > 255)
-                return 0;
-
-            *tp = n;
-            if (!saw_digit)
-            {
-                if (++octets > 4)
-                    return 0;
-                saw_digit = 1;
-            }
-        }
-        else if (ch == '.' && saw_digit)
-        {
-            if (octets == 4)
-                return 0;
-            *++tp = 0;
-            saw_digit = 0;
-        }
-        else
+         if (saw_digit && *tp == 0)
             return 0;
-    }
-    if (octets < 4)
-        return 0;
 
-    memcpy(dst, tmp, NS_INADDRSZ);
+         if (n > 255)
+            return 0;
 
-    return 1;
+         *tp = n;
+         if (!saw_digit) {
+            if (++octets > 4)
+               return 0;
+            saw_digit = 1;
+         }
+      } else if (ch == '.' && saw_digit) {
+         if (octets == 4)
+            return 0;
+         *++tp = 0;
+         saw_digit = 0;
+      } else
+         return 0;
+   }
+   if (octets < 4)
+      return 0;
+
+   memcpy(dst, tmp, NS_INADDRSZ);
+
+   return 1;
 }
+
 /*
 int inet_pton6(const char *src, char *dst)
 {
@@ -169,44 +161,47 @@ int inet_pton6(const char *src, char *dst)
 
 int setnonblocking(udpSocket sock) {
 #if defined(WINDOWS) || defined(WINDOWS64)
-	unsigned long mode=1;
-	ioctlsocket(sock.sock, FIONBIO, &mode);
-	return 1;
+   unsigned long mode = 1;
+   ioctlsocket(sock.sock, FIONBIO, &mode);
+   return 1;
 #else
-	int i;
-	i = fcntl(sock.sock, F_GETFL);
-	if (fcntl(sock.sock, F_SETFL, i | O_NONBLOCK) < 0) return 0;
-	return 1;
+   int i;
+   i = fcntl(sock.sock, F_GETFL);
+   if (fcntl(sock.sock, F_SETFL, i | O_NONBLOCK) < 0)
+      return 0;
+   return 1;
 #endif
 }
 
-udpSocket createUDPSocket(char* ipIn, int portIn) {
+udpSocket createUDPSocket(char *ipIn, int portIn) {
 
-	udpSocket sock;
+   udpSocket sock;
 
-  // save ip
-	strncpy(sock.ip, ipIn, 17);
-  // save port
-	sock.port = portIn;
+   // save ip
+   strncpy(sock.ip, ipIn, 17);
+   // save port
+   sock.port = portIn+100;           // portIn;
+
+   display("createUDPSocket %s %d", sock.ip, sock.port);
 
 
-  sock.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   sock.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	if (sock.sock == -1) {
-		display("Error failed to create socket");
-		return;
-	}
-  // bind to port
-  struct sockaddr_in recvaddr;
-  recvaddr.sin_family = AF_INET;
-  recvaddr.sin_addr.s_addr = INADDR_ANY;
-  recvaddr.sin_port = htons(sock.port);
+   if (sock.sock == -1) {
+      display("Error failed to create socket");
+      return sock;
+   }
+   // bind to port
+   struct sockaddr_in recvaddr;
+   recvaddr.sin_family = AF_INET;
+   recvaddr.sin_addr.s_addr = INADDR_ANY;
+   recvaddr.sin_port = htons(sock.port);
 
-	if (bind(sock.sock, (struct sockaddr*)&recvaddr, sizeof(recvaddr)) == -1) {
+   if (bind(sock.sock, (struct sockaddr *)&recvaddr, sizeof(recvaddr)) == -1) {
 
-    display("Error failed to bind socket");
-		return;
-	}
+      display("Error failed to bind socket");
+      return sock;
+   }
 /*
 	// Set timeout
   #ifdef IBM2
@@ -217,58 +212,61 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
 	timeout.tv_usec = 1;
   #endif
 */
-  /*if (setsockopt(sock.sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
-		display("Error failed to set timeout");
-	}*/
-  setnonblocking(sock);
+   /*if (setsockopt(sock.sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+      display("Error failed to set timeout");
+      } */
+   setnonblocking(sock);
 
+   sock.port = portIn;
 
-	return sock;
+   return sock;
 }
+
 #if defined(WINDOWS) || defined(WINDOWS64)
 
 #else
 int dataAvaible(udpSocket sock) {
-  //return 1;
-  fd_set readfds;
-  fcntl(sock.sock, F_SETFL, O_NONBLOCK);
-  struct timeval tv;
+   //return 1;
+   fd_set readfds;
+   fcntl(sock.sock, F_SETFL, O_NONBLOCK);
+   struct timeval tv;
 
-  FD_ZERO(&readfds);
-  FD_SET(sock.sock, &readfds);
+   FD_ZERO(&readfds);
+   FD_SET(sock.sock, &readfds);
 
-  tv.tv_sec = 0;
-  tv.tv_usec = 0;
+   tv.tv_sec = 0;
+   tv.tv_usec = 0;
 
-  int res = select(sock.sock + 1, &readfds, NULL, NULL, &tv);
+   int res = select(sock.sock + 1, &readfds, NULL, NULL, &tv);
 
 
-  return res;
+   return res;
 }
 #endif
 int sendUDP(udpSocket socket, char buffer[], int len) {
 
-	struct sockaddr_in dest;
+   struct sockaddr_in dest;
 
-	dest.sin_family = AF_INET;
-	dest.sin_port = htons(socket.port);
+   dest.sin_family = AF_INET;
+   dest.sin_port = htons(socket.port);
 
-	inet_pton(AF_INET, socket.ip, &dest.sin_addr.s_addr);
+   inet_pton(AF_INET, socket.ip, &dest.sin_addr.s_addr);
 
-  if (len <= 0)	{
-		return -1;
-	}
+   if (len <= 0) {
+      //display("sendUDP len0 %s %d %s %d", socket.ip, socket.port, buffer, len);
+      return -1;
+   }
+   //display("sendUDP %s %d %s %d", socket.ip, socket.port, buffer, len);
+   int res = sendto(socket.sock, buffer, len, 0, (const struct sockaddr *)&dest, sizeof(dest));
 
-  int res = sendto(socket.sock, buffer, len, 0, (const struct sockaddr*)&dest, sizeof(dest));
+   if (res < 0) {
+      return -1;
+   }
 
-  if (res < 0) {
-		return -1;
-	}
-
-  if (res < len) {
-    // we did not manage to send all data.
-	}
-	return res;
+   if (res < len) {
+      // we did not manage to send all data.
+   }
+   return res;
 }
 
 /*int readUDP2(udpSocket sock, char buffer[], int len) {
@@ -295,57 +293,58 @@ int sendUDP(udpSocket socket, char buffer[], int len) {
 int readUDP(udpSocket sock, char buffer[], int len) {
 #if defined(WINDOWSzzzzz) || defined(WINDOWSzzzz64)
 
-  // zzzzz* Turns out windows do not need this when compiling through mingw in linux
+   // zzzzz* Turns out windows do not need this when compiling through mingw in linux
 
-	// Windows readUDP needs the select command- minimum timeout is 1ms.
-	// Without this playback becomes choppy
+   // Windows readUDP needs the select command- minimum timeout is 1ms.
+   // Without this playback becomes choppy
 
-	// Definitions
-	FD_SET stReadFDS;
-	FD_SET stExceptFDS;
+   // Definitions
+   FD_SET stReadFDS;
+   FD_SET stExceptFDS;
 
-	// Setup for Select
-	FD_ZERO(&stReadFDS);
-	FD_SET(sock.sock, &stReadFDS);
-	FD_ZERO(&stExceptFDS);
-	FD_SET(sock.sock, &stExceptFDS);
+   // Setup for Select
+   FD_ZERO(&stReadFDS);
+   FD_SET(sock.sock, &stReadFDS);
+   FD_ZERO(&stExceptFDS);
+   FD_SET(sock.sock, &stExceptFDS);
 
-	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 100000;
+   struct timeval tv;
+   tv.tv_sec = 0;
+   tv.tv_usec = 100000;
 
-	// Select Command
-	int status = select(-1, &stReadFDS, (FD_SET*)0, &stExceptFDS, &tv);
-	if (status < 0)
-	{
-		display("Select command error");
-		return -1;
-	}
-	if (status == 0)
-	{
-		// No data
-		return 0;
-	}
-	status = recv(sock.sock, buffer, len, 0);
+   // Select Command
+   int status = select(-1, &stReadFDS, (FD_SET *) 0, &stExceptFDS, &tv);
+   if (status < 0) {
+      display("Select command error");
+      return -1;
+   }
+   if (status == 0) {
+      // No data
+      return 0;
+   }
+   status = recv(sock.sock, buffer, len, 0);
 #else
-	// For apple or linux-just read - will timeout in 0.5 ms
-	int status = (int)recv(sock.sock, buffer, len, 0);
+   // For apple or linux-just read - will timeout in 0.5 ms
+   int status = (int)recv(sock.sock, buffer, len, 0);
 #endif
-	if (status < 0)
-	{
-		//display("Error reading socket");
-	}
-	return status;
+   if (status < 0) {
+      //display("Error reading socket");
+   }
+   return status;
 }
 
 
-int ifMessage(udpSocket sock){
-  fd_set rfd;
-  FD_ZERO(&rfd);
-  FD_SET(sock.sock, &rfd);
-  struct timeval timeout;
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 0;
-  int ret = select(sock.sock+1, &rfd, NULL, NULL, &timeout);
-  return ret;
+int ifMessage(udpSocket sock) {
+   fd_set rfd;
+   FD_ZERO(&rfd);
+   FD_SET(sock.sock, &rfd);
+   struct timeval timeout;
+   timeout.tv_sec = 0;
+   timeout.tv_usec = 0;
+   int ret = select(sock.sock + 1, &rfd, NULL, NULL, &timeout);
+   return ret;
+}
+
+void closeSocket(udpSocket sock) {
+   close(sock.sock);
 }

@@ -59,7 +59,7 @@ endif
 
 all: openSimIO.xpl copy
 
-OBJS = openSimIO.o display.o rs232.o pins.o udp.o statusDisplay.o iotypes.o
+OBJS = openSimIO.o display.o rs232.o pins.o udp.o statusDisplay.o iotypes.o config.o
 
 openSimIO.xpl: $(OBJS)
 	$(CC) $(LDFLAGS) $(LDDYNFLAGS) $(OBJS) -o openSimIO.xpl $(LIBS)
