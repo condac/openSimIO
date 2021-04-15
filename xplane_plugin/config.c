@@ -201,6 +201,11 @@ void createSockets() {
 
          masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
          XPLMDebugString("openSimIO: created socket");
+
+         XPLMDebugString(masters[i].ip);
+         char test[100];
+         sprintf(test, "%d", masters[i].udpPort);
+         XPLMDebugString(test);
       }
 
    }

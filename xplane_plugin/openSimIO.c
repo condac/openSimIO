@@ -386,7 +386,7 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
                            void *inRefcon) {
 
    /* The actual callback.  First we read the sim's time and the data. */
-   XPLMDebugString("openSimIO: flightloop\n");
+   //XPLMDebugString("openSimIO: flightloop\n");
 
    float elapsed = XPLMGetElapsedTime();
    setTimeStep(elapsed);
@@ -413,7 +413,7 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
          }
       }
       if (masters[i].type == IS_ETH) {
-
+         //display("masterETH");
          while (ifMessage(masters[i].socket)) {
             int res = readUDP(masters[i].socket, buf, 4095);
             //int test = ifMessage(asock);
@@ -435,10 +435,13 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
             lastSignal = elapsed;
             sendConfigReset();
          }
-
+         // Tell the arduino that we are ready for next frame.
+         char out[10] = "*";
+         sendUDP(masters[i].socket, out, sizeof(out));
+         
       }
    }
-   //sendConfig();
+   sendConfig();
    handleOutputs();
 
    if (statusDisplayShow == 1) {

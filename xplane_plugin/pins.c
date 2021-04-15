@@ -31,7 +31,7 @@ pin_struct *lineToStruct(char *line) {
 
    // convert config line to struct and return it as pointer
    pin_struct *newPin = malloc(sizeof(*newPin));
-   if ((line[0] == '#') || (line[0] == '\r') || (line[0] == '\n')) {
+   if ((line[0] == '#') || (line[0] == '\r') || (line[0] == '\n' || line[0] == '/')) {
       return NULL;
    }
    if ((line[0] == '*')) {
