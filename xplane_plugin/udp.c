@@ -177,7 +177,7 @@ udpSocket createUDPSocket(char* ipIn, int portIn) {
     // save ip
     strncpy(sock.ip, ipIn, 17);
     // save port
-    sock.port = portIn + 100; // portIn;
+    sock.port = portIn; // + 100; // portIn;
 
     display("createUDPSocket %s %d", sock.ip, sock.port);
 

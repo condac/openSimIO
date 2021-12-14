@@ -60,7 +60,7 @@ int useSerial = 0;
 
 master_struct masters[MAXMASTERS];
 
-pin_struct* pins;
+//pin_struct* pins;
 
 int nrOfLines = 0;
 int nrOfPins = 0;
@@ -183,7 +183,21 @@ PLUGIN_API void XPluginDisable(void) {
 PLUGIN_API int XPluginEnable(void) {
     return 1;
 }
-PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void* inParam) {
+
+PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
+    char test[200];
+    sprintf(test, "inFrom %d inMsg %ld inParam %d \n", inFrom, inMsg, (int)inParam);
+    XPLMDebugString(test);
+    if (inFrom == XPLM_PLUGIN_XPLANE) {
+        switch (inMsg) {
+        case XPLM_MSG_PLANE_LOADED:
+            if ((int)inParam == 0) {
+                reloadConfig();
+                sendConfigReset();
+            }
+            break;
+        }
+    }
 }
 
 void draw_hello_world(XPLMWindowID in_window_id, void* in_refcon) {

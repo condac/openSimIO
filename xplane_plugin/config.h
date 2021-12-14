@@ -1,7 +1,7 @@
 #ifndef CONFIG_H_INCLUDED
 #define CONFIG_H_INCLUDED
 
-FILE* configFile;
+extern FILE* configFile;
 
 void readConfig();
 int getNrOfLines(char* filename);

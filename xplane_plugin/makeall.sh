@@ -64,6 +64,7 @@ mkdir $TARGETDIR/64
 ##OS=LINUX CFLAGS=-m32 LDFLAGS=-m32 TARGET=$TARGETDIR/32/lin.xpl make
 
 # build Linux64 version
+echo "# Linux"
 make -s clean
 OS=LINUX CFLAGS=-m64 LDFLAGS=-m64 TARGET=$TARGETDIR/64/lin.xpl make -s
 
@@ -72,6 +73,7 @@ OS=LINUX CFLAGS=-m64 LDFLAGS=-m64 TARGET=$TARGETDIR/64/lin.xpl make -s
 ##OS=WINDOWS CC=i686-w64-mingw32-gcc TARGET=$TARGETDIR/32/win.xpl make
 
 # build Windows64 version
+echo "# Windows 64"
 make -s clean
 OS=WINDOWS64 CC=x86_64-w64-mingw32-gcc TARGET=$TARGETDIR/64/win.xpl make -s
 

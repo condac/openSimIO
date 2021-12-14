@@ -12,6 +12,9 @@
 //#define PRINTF_ADDR "10.0.0.123"
 #define PRINTF_ADDR "127.0.0.1"
 
+#define XPLM_MSG_PLANE_LOADED 102
+#define XPLM_MSG_LIVERY_LOADED 108
+
 #if defined(MACOSX)
 #    define APL 1
 #    define IBM 0

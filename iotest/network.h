@@ -19,12 +19,17 @@ IPAddress remote;
 int setupEthernet() {
   pcSerial.println("starting network");
   pcSerial.print("mac ");
-  pcSerial.print(mac[0]);
-  pcSerial.print(mac[1]);
-  pcSerial.print(mac[2]);
-  pcSerial.print(mac[3]);
-  pcSerial.print(mac[4]);
-  pcSerial.println(mac[5]);
+  pcSerial.print(mac[0], HEX);
+  pcSerial.print(":");
+  pcSerial.print(mac[1], HEX);
+  pcSerial.print(":");
+  pcSerial.print(mac[2], HEX);
+  pcSerial.print(":");
+  pcSerial.print(mac[3], HEX);
+  pcSerial.print(":");
+  pcSerial.print(mac[4], HEX);
+  pcSerial.print(":");
+  pcSerial.println(mac[5], HEX);
   pcSerial.print("ip ");
   pcSerial.println(ip);
   

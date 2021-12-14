@@ -7,7 +7,7 @@
 #include "config.h"
 
 //master_struct masters[MAXMASTERS];
-
+FILE* configFile;
 char* filename = "Resources/plugins/openSimIO/config.txt";
 
 void readConfig() {
@@ -231,13 +231,14 @@ void sendConfig() {
         //{1;2;0;D3,1,0;A2,5,3;}
         int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
 
-        display("write config:%s %s", out, masters[pins[i].master].ip);
         if (masters[pins[i].master].type == IS_SERIAL) {
-
+            display("write config serial:%s %s", out, masters[pins[i].master].ip);
             RS232_SendBuf(masters[pins[i].master].portNumber, out, len + 1);
-        }
-        if (masters[pins[i].master].type == IS_ETH) {
+        } else if (masters[pins[i].master].type == IS_ETH) {
+            display("write config eth:%s %s", out, masters[pins[i].master].ip);
             sendUDP(masters[pins[i].master].socket, out, len + 1);
+        } else {
+            display("write config error:%s %s", out, masters[pins[i].master].ip);
         }
     }
 }
