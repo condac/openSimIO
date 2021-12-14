@@ -228,7 +228,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
     if (flock(Cport[comport_number], LOCK_EX | LOCK_NB) != 0) {
         close(Cport[comport_number]);
         perror("Another process has locked the comport.");
-        return (-1);
+        return (-2);
     }
 
     error = tcgetattr(Cport[comport_number], old_port_settings + comport_number);
@@ -236,7 +236,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         close(Cport[comport_number]);
         flock(Cport[comport_number], LOCK_UN); /* free the port so that others can use it. */
         perror("unable to read portsettings ");
-        return (-1);
+        return (-3);
     }
     memset(&new_port_settings, 0, sizeof(new_port_settings)); /* clear the new struct */
 
@@ -259,7 +259,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         close(Cport[comport_number]);
         flock(Cport[comport_number], LOCK_UN); /* free the port so that others can use it. */
         perror("unable to adjust portsettings ");
-        return (-1);
+        return (-4);
     }
 
     /* http://man7.org/linux/man-pages/man4/tty_ioctl.4.html */
@@ -268,7 +268,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         tcsetattr(Cport[comport_number], TCSANOW, old_port_settings + comport_number);
         flock(Cport[comport_number], LOCK_UN); /* free the port so that others can use it. */
         perror("unable to get portstatus");
-        return (-1);
+        return (-5);
     }
 
     status |= TIOCM_DTR; /* turn on DTR */
@@ -278,7 +278,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         tcsetattr(Cport[comport_number], TCSANOW, old_port_settings + comport_number);
         flock(Cport[comport_number], LOCK_UN); /* free the port so that others can use it. */
         perror("unable to set portstatus");
-        return (-1);
+        return (-6);
     }
 
     return (comport_number);

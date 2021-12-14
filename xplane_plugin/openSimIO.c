@@ -393,8 +393,11 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
                 if (ifCharInArray(buf, '}') == -1) {
                     // ONly half of message recieved or garbage
                     //display("received %i bytes: %s\n", n, (char *)buf);
+                } else {
+                    display("received %i bytes: %s\n", n, (char *)buf);
+                    parseSerialInput(buf, n);
                 }
-                parseSerialInput(buf, n);
+                
             }
         }
         if (masters[i].type == IS_ETH) {

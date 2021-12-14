@@ -16,6 +16,9 @@ void readConfig() {
         if (masters[i].type == IS_ETH) {
             closeSocket(masters[i].socket);
         }
+        if (masters[i].type == IS_SERIAL) {
+            //RS232_CloseComport(masters[i].portNumber);
+        }
         masters[i].type = 0;
     }
     nrOfLines = 0;
@@ -189,14 +192,15 @@ int readSerialConfig(char* port) {
 void createSockets() {
     for (int i = 0; i < MAXMASTERS; i++) {
         if (masters[i].type == IS_ETH) {
+            if (masters[i].socket.sock <= 0) {
+                masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
+                XPLMDebugString("openSimIO: created socket");
 
-            masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
-            XPLMDebugString("openSimIO: created socket");
-
-            XPLMDebugString(masters[i].ip);
-            char test[100];
-            sprintf(test, "%d", masters[i].udpPort);
-            XPLMDebugString(test);
+                XPLMDebugString(masters[i].ip);
+                char test[100];
+                sprintf(test, "%d", masters[i].udpPort);
+                XPLMDebugString(test);
+            }
         }
     }
 }
@@ -206,11 +210,17 @@ void createSerialPorts() {
 
             int bdrate = 115200; /* 115200 baud */
             char mode[] = {'8', 'N', '1', 0};
-
-            masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0);
-            XPLMDebugString("openSimIO: created port");
-            if (masters[i].portNumber == -1) {
-                display("Error: Can not open comport %s\n", masters[i].serialport);
+            if (masters[i].portNumber <= 0) {
+                masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0);
+                XPLMDebugString("openSimIO: created port");
+                if (masters[i].portNumber < 0) {
+                    display("Error %d: Can not open comport %s\n", masters[i].portNumber, masters[i].serialport);
+                    //XPLMDebugString("openSimIO: Error Can not open comport ", masters[i].portNumber, masters[i].serialport);
+                    XPLMDebugString(masters[i].portNumber);
+                    XPLMDebugString(" ");
+                    XPLMDebugString(masters[i].serialport);
+                    XPLMDebugString("\n");
+                }
             }
         }
     }

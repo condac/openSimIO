@@ -474,14 +474,35 @@ void setDigitalData(int i, int value) {
         //XPLMDebugString("openSimIO:setDigitalData int array\n");
         int setValue[1];
         setValue[0] = (int)value;
-        //display("setDigitalData setting int %s %d", i, setValue[0]);
-        XPLMSetDatavi(pins[i].dataRef, setValue, pins[i].dataRefIndex, 1);
+        //int setValue = value;
+        //display("setDigitalData setting int %d %d", i, setValue);
+        if (pins[i].dataRef != NULL) {
+
+            if (pins[i].reverse == 1) {
+                if (value == 1) {
+                    setValue[0] = (int)pins[i].xplaneMin;
+                } else {
+                    setValue[0] = (int)pins[i].xplaneMax;
+                }
+            } else {
+                if (value == 1) {
+                    setValue[0] = (int)pins[i].xplaneMax;
+                } else {
+                    setValue[0] = (int)pins[i].xplaneMin;
+                }
+            }
+            //XPLMSetDatai(pins[i].dataRef, setValue);
+            display("setDigitalData setting int %d %d", i, setValue[0]);
+            XPLMSetDatavi(pins[i].dataRef, setValue, pins[i].dataRefIndex, 1);
+        }
+        
+        
         pins[i].lastSimValue = setValue[0];
     }
 }
 
 void digitalButton(int i, int var) {
-    if (pins[i].xplaneExtra == 0) {
+    if (pins[i].xplaneExtra == 0 || pins[i].xplaneExtra == 3 ) {
         // on off switch
         if (pins[i].dataRef != NULL) {
 
