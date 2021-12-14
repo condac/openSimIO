@@ -14,7 +14,7 @@ void readConfig() {
     //masters = malloc(MAXMASTERS * sizeof(master_struct));
     for (int i = 0; i < MAXMASTERS; i++) {
         if (masters[i].type == IS_ETH) {
-            //closeSocket(masters[i].socket);
+            closeSocket(masters[i].socket);
         }
         if (masters[i].type == IS_SERIAL) {
             //RS232_CloseComport(masters[i].portNumber);
@@ -192,7 +192,7 @@ int readSerialConfig(char* port) {
 void createSockets() {
     for (int i = 0; i < MAXMASTERS; i++) {
         if (masters[i].type == IS_ETH) {
-            if (masters[i].socket.sock <=0) {
+            if (masters[i].socket.sock <= 0) {
                 masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
                 XPLMDebugString("openSimIO: created socket");
 
@@ -201,7 +201,6 @@ void createSockets() {
                 sprintf(test, "%d", masters[i].udpPort);
                 XPLMDebugString(test);
             }
-            
         }
     }
 }
@@ -223,7 +222,6 @@ void createSerialPorts() {
                     XPLMDebugString("\n");
                 }
             }
-            
         }
     }
 }
