@@ -192,15 +192,15 @@ int readSerialConfig(char* port) {
 void createSockets() {
     for (int i = 0; i < MAXMASTERS; i++) {
         if (masters[i].type == IS_ETH) {
-            if (masters[i].socket.sock <= 0) {
-                masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
-                XPLMDebugString("openSimIO: created socket");
+            //if (masters[i].socket.sock <= 0) {
+            masters[i].socket = createUDPSocket(masters[i].ip, masters[i].udpPort);
+            XPLMDebugString("openSimIO: created socket");
 
-                XPLMDebugString(masters[i].ip);
-                char test[100];
-                sprintf(test, "%d", masters[i].udpPort);
-                XPLMDebugString(test);
-            }
+            XPLMDebugString(masters[i].ip);
+            char test[100];
+            sprintf(test, "%d", masters[i].udpPort);
+            XPLMDebugString(test);
+            //}
         }
     }
 }
