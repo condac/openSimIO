@@ -45,9 +45,9 @@ char* comports[RS232_PORTNR] = {"/dev/ttyS0",   "/dev/ttyS1",   "/dev/ttyS2",   
                                 "/dev/ttyACM0", "/dev/ttyACM1", "/dev/rfcomm0", "/dev/rfcomm1", "/dev/ircomm0", "/dev/ircomm1", "/dev/cuau0",   "/dev/cuau1",
                                 "/dev/cuau2",   "/dev/cuau3",   "/dev/cuaU0",   "/dev/cuaU1",   "/dev/cuaU2",   "/dev/cuaU3"};
 
-int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int flowctrl) {
+int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int flowctrl, int nr) {
     int baudr, status;
-    int comport_number = 1;
+    int comport_number = nr;
     // if((comport_number>=RS232_PORTNR)||(comport_number<0))
     // {
     //   printf("illegal comport number\n");
@@ -147,7 +147,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         break;
     default:
         printf("invalid baudrate\n");
-        return (1);
+        return (-1);
         break;
     }
 
@@ -155,7 +155,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
 
     if (strlen(mode) != 3) {
         printf("invalid mode \"%s\"\n", mode);
-        return (1);
+        return (-1);
     }
 
     switch (mode[0]) {
@@ -173,7 +173,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         break;
     default:
         printf("invalid number of data-bits '%c'\n", mode[0]);
-        return (1);
+        return (-1);
         break;
     }
 
@@ -195,7 +195,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         break;
     default:
         printf("invalid parity '%c'\n", mode[1]);
-        return (1);
+        return (-1);
         break;
     }
 
@@ -208,7 +208,7 @@ int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int fl
         break;
     default:
         printf("invalid number of stop bits '%c'\n", mode[2]);
-        return (1);
+        return (-1);
         break;
     }
 
@@ -485,9 +485,9 @@ char* comports[RS232_PORTNR] = {"\\\\.\\COM1",  "\\\\.\\COM2",  "\\\\.\\COM3",  
 
 char mode_str[128];
 
-int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int flowctrl) {
+int RS232_OpenComport(char* comport_name, int baudrate, const char* mode, int flowctrl, int nr) {
 
-    int comport_number = 1;
+    int comport_number = nr;
     // if((comport_number>=RS232_PORTNR)||(comport_number<0))
     // {
     //   printf("illegal comport number\n");

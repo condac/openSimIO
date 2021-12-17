@@ -58,7 +58,7 @@ extern "C" {
 #    endif
 #endif
 
-int RS232_OpenComport(char*, int, const char*, int);
+int RS232_OpenComport(char*, int, const char*, int, int);
 int RS232_PollComport(int, char*, int);
 int RS232_SendByte(int, char);
 int RS232_SendBuf(int, char*, int);

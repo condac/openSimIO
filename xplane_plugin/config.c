@@ -17,7 +17,7 @@ void readConfig() {
             closeSocket(masters[i].socket);
         }
         if (masters[i].type == IS_SERIAL) {
-            //RS232_CloseComport(masters[i].portNumber);
+            RS232_CloseComport(masters[i].portNumber);
         }
         masters[i].type = 0;
     }
@@ -210,17 +210,23 @@ void createSerialPorts() {
 
             int bdrate = 115200; /* 115200 baud */
             char mode[] = {'8', 'N', '1', 0};
-            if (masters[i].portNumber <= 0) {
-                masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0);
-                XPLMDebugString("openSimIO: created port");
-                if (masters[i].portNumber < 0) {
-                    display("Error %d: Can not open comport %s\n", masters[i].portNumber, masters[i].serialport);
-                    //XPLMDebugString("openSimIO: Error Can not open comport ", masters[i].portNumber, masters[i].serialport);
-                    XPLMDebugString(masters[i].portNumber);
-                    XPLMDebugString(" ");
-                    XPLMDebugString(masters[i].serialport);
-                    XPLMDebugString("\n");
-                }
+
+            char test[100];
+            sprintf(test, "serial %d %s\n", i, masters[i].serialport);
+            XPLMDebugString(test);
+
+            masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0, i);
+            XPLMDebugString("openSimIO: created serial port");
+
+            sprintf(test, "serial %d %s\n", masters[i].portNumber, masters[i].serialport);
+            XPLMDebugString(test);
+            if (masters[i].portNumber < 0) {
+                display("Error %d: Can not open comport %s\n", masters[i].portNumber, masters[i].serialport);
+                //XPLMDebugString("openSimIO: Error Can not open comport ", masters[i].portNumber, masters[i].serialport);
+                XPLMDebugString(masters[i].portNumber);
+                XPLMDebugString(" ");
+                XPLMDebugString(masters[i].serialport);
+                XPLMDebugString("\n");
             }
         }
     }
