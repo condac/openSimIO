@@ -82,5 +82,13 @@ int getTypeFromString(char* string) {
     if (strcmp(string, "AO_TEXT") == 0) {
         return 137;
     }
+    //#define MCP_DI 17
+    if (strcmp(string, "MCP_DI") == 0) {
+        return 17;
+    }
+    // #define MCP_DO 18
+    if (strcmp(string, "MCP_DO") == 0) {
+        return 18;
+    }
     return 0;
 }

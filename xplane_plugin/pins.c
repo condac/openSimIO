@@ -566,6 +566,7 @@ void parseInputPin(char* data, int masterId, int slaveId) {
     //display("parse inputpin start  %s master %d slave %d", data, masterId, slaveId);
     char* digital = strstr(data, "D"); // this also removes leading spaces
     char* analog = strstr(data, "A");
+    char* mcp = strstr(data, "M");
 
     char pinName[6];
     int var = 0;
@@ -580,6 +581,12 @@ void parseInputPin(char* data, int masterId, int slaveId) {
     if (analog != NULL) {
         //display("Found Analog %s", analog);
         test = sscanf(analog, "%4[^ ] %d", pinName, &var);
+        //display("value %d , %s float %f", var, pinName, ftemp);
+        //setAnalogData(1, slaveId, pinName, var);
+    }
+    if (mcp != NULL) {
+        //display("Found mcp %s", mcp);
+        test = sscanf(mcp, "%4[^ ] %d", pinName, &var);
         //display("value %d , %s float %f", var, pinName, ftemp);
         //setAnalogData(1, slaveId, pinName, var);
     }
@@ -669,6 +676,10 @@ void parseInputPin(char* data, int masterId, int slaveId) {
                                 continue;
                             }
                         }
+
+                        break;
+                    case MCP_DI: //
+                        digitalButton(i, var);
 
                         break;
                     }

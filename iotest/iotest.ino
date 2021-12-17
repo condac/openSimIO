@@ -12,11 +12,12 @@ String type = BOARD;
 
 #include <avr/wdt.h> // Watchdog interupt // 20 bytes for setup and 2 bytes for each reset, no memory
 
-int pinsData[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; 
-int pinsExtra[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT]; 
+uint8_t pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT]; // this array keeps the configuration a pin have
+int pinsData[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT]; 
+uint8_t pinsExtra[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT]; 
 
 #define CHANGE_COUNT 4 // This is how many times we repeat the signal that the pin have changed
-int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
+uint8_t pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT];
 
 
 #include "iotypes.h"
@@ -40,6 +41,11 @@ int pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT];
 #ifdef LCD
 #include "lcd.h" // // Uses 934 bytes of program memory and 62 bytes of memory
 #endif
+
+#ifdef MCP23017x
+# include "mcpfunctions.h" // // Uses 964 bytes of program memory and 881 bytes of memory
+#endif
+
 
 int myId = 0; // this will automaticly be set by the chain ping loop
 bool cts = true;
@@ -83,15 +89,30 @@ void readConfig() {
   
 }
 
-void setup() {
-   
+void setup2() {
+
   Serial.begin(115200);
-  pcSerial.println("boot");
-  pcSerial.begin(115200);
   
-
-
+  pcSerial.begin(115200);
+  pcSerial.println("boot");
+  
+  wdt_reset();
+  #ifdef MCP23017x
+  Wire.begin();
+  #endif
+  
   #ifdef ETHERNET
+  pinMode(12,OUTPUT);
+  # ifdef ETHERNET_RESET
+  pcSerial.println("reset ethernet board");
+  digitalWrite(12,LOW);
+  delay(500);
+  wdt_reset();
+  digitalWrite(12,HIGH);
+  delay(500);
+  wdt_reset();
+  pcSerial.println("reset ethernet board done");
+  # endif
   // disable SD card if one in the slot, this is needed on newer ethernet boards
   pinMode(4,OUTPUT);
   digitalWrite(4,HIGH);
@@ -107,46 +128,46 @@ void setup() {
     digitalWrite(LED_BUILTIN, LOW);
     delay(100);
   }
+  wdt_reset();
+  
   Serial.println(Ethernet.localIP());
   #endif
+  
   #ifdef SERIAL_CHAIN
   chainSerial.begin(115200);
   #endif
   
-
+  wdt_reset();
 
   // temporary hardcoded setups
   pinsConfig[0] = NOTUSED;
   pinsConfig[1] = NOTUSED;
-  //pinsConfig[2] = AO_STEPPER;
-  //pinsData[2] = 1800;
-  /*pinsConfig[3] = DO_LOW;
-  pinsConfig[4] = DO_HIGH;
-  pinsConfig[5] = DI_INPUT_PULLUP;
-  pinsConfig[6] = DI_ROTARY_ENCODER_TYPE1;
-  pinsConfig[7] = NOTUSED;
-  pinsConfig[DIGITAL_PIN_COUNT+0] = AI_RAW;
-  pinsConfig[DIGITAL_PIN_COUNT+1] = AI_RAW;
-  pinsConfig[DIGITAL_PIN_COUNT+2] = AI_FILTER;
-  pinsConfig[DIGITAL_PIN_COUNT+3] = AI_FILTER;
-  pinsConfig[DIGITAL_PIN_COUNT+4] = AI_FILTER;
-  pinsConfig[DIGITAL_PIN_COUNT+5] = AI_FILTER;
+
   
-  pinsConfig[13] = DO_BOOL;*/
-  //pinsConfig[DIGITAL_PIN_COUNT+1] = AI_FILTER;
-  //pinsConfig[DIGITAL_PIN_COUNT+0] = AI_FILTER;
+  pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+2] = MCP_DI;
+  pinsConfig[DIGITAL_PIN_COUNT+2] = DI_INPUT_PULLUP;
+
   
-  
+  wdt_reset();
   setupDigitalPins();
-#ifdef STEPPER
+  #ifdef STEPPER
   setupStepper();
   #endif
+  wdt_reset();
   #ifdef LCD
   setupLCD();
   #endif
-  wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
+
+  
   wdt_reset();
-  pcSerial.println("Starting version v0.1.3");
+  pcSerial.println("Starting version v0.2.0");
+}
+
+void setup() {
+  wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
+  setup2();
+  wdt_reset();
+  
 }
 
 void loop() {
@@ -157,6 +178,11 @@ void loop() {
                               looptime = millis();
                               #endif
   handleDigitalPins();
+  
+  #ifdef MCP23017x
+  readMCPboards();
+  #endif
+  
   #ifdef ETHERNET
   loopEthernet();
   wdt_reset();
@@ -282,7 +308,7 @@ void checkAnalogPinChanged( int pin) {
 
 void sendData() {
   bool changes = false;
-  for (int i = 0; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i++) {
+  for (int i = 0; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT; i++) {
     if (pin_changed[i]) {
       changes = true;
       break;
@@ -313,6 +339,16 @@ void sendData() {
       pin_changed[i]--;
       dataSerial.print("A");
       dataSerial.print(i-DIGITAL_PIN_COUNT);
+      dataSerial.print(" ");
+      dataSerial.print(pinsData[i]);
+      dataSerial.print(",");
+    }
+  }
+  for (int i = DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT; i<DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT; i++) {
+    if (pin_changed[i]) {
+      pin_changed[i]--;
+      dataSerial.print("M");
+      dataSerial.print(i-DIGITAL_PIN_COUNT-ANALOG_PIN_COUNT);
       dataSerial.print(" ");
       dataSerial.print(pinsData[i]);
       dataSerial.print(",");
@@ -535,6 +571,10 @@ int readPinNr(HardwareSerial& inSerial, char sep) {
     // all good add offset for analog pin
     pinNr = pinNr + DIGITAL_PIN_COUNT;
     da[0] = ' ';
+  } else if (da[0] == 'M') {
+    // all good add offset for mcp pin
+    pinNr = pinNr + DIGITAL_PIN_COUNT + ANALOG_PIN_COUNT;
+    da[0] = ' ';
   } else {
     // not good
     return -1;
@@ -643,7 +683,7 @@ void cyclicRefresh() {
 
   while(pinsConfig[cyclic]<1) {
     cyclic++;
-    if (cyclic > DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT) {
+    if (cyclic > DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT) {
       cyclic =0;
       break;
     }
