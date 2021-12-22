@@ -88,7 +88,7 @@ int getTypeFromString(char* string) {
     }
     // #define MCP_DO 18
     if (strcmp(string, "MCP_DO") == 0) {
-        return 18;
+        return 138;
     }
     return 0;
 }

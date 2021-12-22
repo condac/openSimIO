@@ -92,7 +92,7 @@ void readConfig() {
 void setup2() {
 
   Serial.begin(115200);
-  
+  Serial.println("boot");
   pcSerial.begin(115200);
   pcSerial.println("boot");
   
@@ -144,8 +144,11 @@ void setup2() {
   pinsConfig[1] = NOTUSED;
 
   
-  pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+2] = MCP_DI;
-  pinsConfig[DIGITAL_PIN_COUNT+2] = DI_INPUT_PULLUP;
+  //pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+2] = MCP_DI;
+  //pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+2+16] = MCP_DI;
+  
+  //pinsConfig[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+2+16+8] = MCP_DO;
+  //pinsConfig[DIGITAL_PIN_COUNT+2] = DI_INPUT_PULLUP;
 
   
   wdt_reset();
@@ -164,6 +167,11 @@ void setup2() {
 }
 
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH); 
+  delay(100); 
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
   wdt_enable(WDTO_2S); //Setup watchdog timeout of 2s.
   setup2();
   wdt_reset();
@@ -181,6 +189,8 @@ void loop() {
   
   #ifdef MCP23017x
   readMCPboards();
+  wdt_reset();
+  writeMCPBoards();
   #endif
   
   #ifdef ETHERNET
@@ -410,7 +420,7 @@ void parseSerial() {
 
 }
 
-void waitForData(HardwareSerial& inSerial, int nr) {
+int waitForData(HardwareSerial& inSerial, int nr) {
   int counter = 0;
   while (inSerial.available() < nr) {
     // nop
@@ -419,8 +429,10 @@ void waitForData(HardwareSerial& inSerial, int nr) {
     if (counter > 1000) {
       pcSerial.println("waiting...");
       counter = 0;
+      return -1;
     }
   }
+  return 0;
 }
 #ifdef MASTER
 void parsePCSerial() {
@@ -428,21 +440,27 @@ void parsePCSerial() {
   // if not send it to next device in chain
   while (pcSerial.available() > 0) {
     if (pcSerial.read() == '{') {
-      waitForData(pcSerial, 3);
+      if (waitForData(pcSerial, 3) == -1) {
+        return;
+      }
       int masterid = pcSerial.parseInt();
-      waitForData(pcSerial, 3);
+      if (waitForData(pcSerial, 3) == -1) {
+        return;
+      }
       char data = pcSerial.read(); // read the ; character
-      waitForData(pcSerial, 3);
+      if (waitForData(pcSerial, 3) == -1) {
+        return;
+      }
       int slaveid = pcSerial.parseInt();
 
-      pcSerial.print("got master");
-      pcSerial.print(masterid);
+      //pcSerial.print("got master");
+      //pcSerial.print(masterid);
       
-      pcSerial.print(" slave");
-      pcSerial.print(slaveid);
+      //pcSerial.print(" slave");
+      //pcSerial.print(slaveid);
       
       if (masterid == MASTER_ID) {
-        pcSerial.println("data for me or slaves");
+        //pcSerial.println("data for me or slaves");
         // data for me or my slaves
       
         if ( slaveid == 0 ) {
@@ -452,23 +470,25 @@ void parsePCSerial() {
         } 
         else if ( slaveid > 0 ) {
           // relay data forward
+          #ifdef SERIAL_CHAIN
           relaySerialFromPC(slaveid);
+          #endif
           return;
         } 
         else  {
           // id not found?
-          pcSerial.println("error else id");
+          //pcSerial.println("error else id");
           
           return;
         }
       }
       else if (masterid > 0) {
-        pcSerial.println("else if");
+        //pcSerial.println("else if");
         // relay to other masters???
         
       }
       else {
-        pcSerial.println("broadcast");
+        //pcSerial.println("broadcast");
         // broadcast?
       }
     }
@@ -524,7 +544,7 @@ void doSomething(HardwareSerial& inSerial) {
   // message for me
   char data;
   
-  pcSerial.print("message for me: ");
+  //pcSerial.print("message for me: ");
   waitForData(inSerial, 1);
   data = inSerial.read(); // read the ; char
   waitForData(inSerial, 3);

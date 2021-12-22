@@ -28,6 +28,8 @@ pin_struct* lineToStruct(char* line) {
 
     // convert config line to struct and return it as pointer
     pin_struct* newPin = malloc(sizeof(*newPin));
+    memset(newPin, 0, sizeof(pin_struct));
+
     if ((line[0] == '#') || (line[0] == '\r') || (line[0] == '\n' || line[0] == '/')) {
         return NULL;
     }
@@ -120,6 +122,7 @@ pin_struct* lineToStruct(char* line) {
         if (newPin->dataRef == NULL) {
             newPin->commandRef = XPLMFindCommand(newPin->dataRefString);
             if (newPin->commandRef == NULL) {
+                infoLog("ERROR: dataRef invalid %s\n", newPin->dataRefString);
                 display("dataRef invalid %s", newPin->dataRefString);
                 return NULL;
             }
@@ -495,14 +498,13 @@ void setDigitalData(int i, int value) {
             display("setDigitalData setting int %d %d", i, setValue[0]);
             XPLMSetDatavi(pins[i].dataRef, setValue, pins[i].dataRefIndex, 1);
         }
-        
-        
+
         pins[i].lastSimValue = setValue[0];
     }
 }
 
 void digitalButton(int i, int var) {
-    if (pins[i].xplaneExtra == 0 || pins[i].xplaneExtra == 3 ) {
+    if (pins[i].xplaneExtra == 0 || pins[i].xplaneExtra == 3) {
         // on off switch
         if (pins[i].dataRef != NULL) {
 
@@ -695,23 +697,38 @@ void setDigitalPinSerial(int cport_nr, int pin, int value) {
 
     // send digital data to arduino
     if (pins[pin].output == 1) {
-        if (pins[pin].prevValue != value) {
+        if (pins[pin].changed > 0) {
 
             int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
-            display("write serial:%s", out);
+            display("write do serial:%s", out);
             RS232_SendBuf(cport_nr, out, len + 1);
 
-            pins[pin].prevValue = value;
+            pins[pin].changed = pins[pin].changed - 1;
+            //pins[pin].prevValue = value;
         }
     }
 }
+void setAnalogPinSerial(int cport_nr, int pin, float value) {
+    char out[512];
 
+    // send digital data to arduino
+    if (pins[pin].output == 1) {
+        if (pins[pin].prevValueF != value) {
+
+            int len = sprintf(out, "{%d;%d;0;%s=%f;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
+            display("write ao serial:%s", out);
+            RS232_SendBuf(cport_nr, out, len + 1);
+
+            pins[pin].prevValueF = value;
+        }
+    }
+}
 void setDigitalPinEth(udpSocket sock, int pin, int value) {
     char out[512];
 
     // send digital data to arduino
     if (pins[pin].output == 1) {
-        if (pins[pin].prevValue != value) {
+        if (pins[pin].changed > 0) {
 
             int len = sprintf(out, "{%d;%d;0;%s=%d;}", pins[pin].master, pins[pin].slave, pins[pin].pinNameString, value);
             //display("write udp:%s", out);
@@ -721,6 +738,7 @@ void setDigitalPinEth(udpSocket sock, int pin, int value) {
         }
     }
 }
+
 void setAnalogPinEth(udpSocket sock, int pin, float value) {
     char out[512];
 
@@ -736,6 +754,7 @@ void setAnalogPinEth(udpSocket sock, int pin, float value) {
         }
     }
 }
+
 void sendDataToUDP(udpSocket sock) {
 
     for (int i = 0; i < nrOfPins; i++) {
@@ -771,6 +790,22 @@ void sendDataToUDP(udpSocket sock) {
     }
 }
 void handleOutputs() {
+    static int refreshtimer = 0;
+    static int refreshcounter = 0;
+    if (sendcount < nrOfPins) {
+        return;
+    }
+    refreshtimer++;
+    if (refreshtimer > 20) {
+        //display("refresh %d", refreshcounter);
+        refreshtimer = 0;
+        if (refreshcounter >= nrOfPins) {
+            refreshcounter = 0;
+        }
+        pins[refreshcounter].changed++;
+        refreshcounter++;
+    }
+
     for (int i = 0; i < nrOfPins; i++) {
         if (pins[i].output == 1) {
             if (pins[i].ioMode == DO_HIGH || pins[i].ioMode == DO_LOW) {
@@ -804,7 +839,7 @@ void handleOutputs() {
             } else {
                 display("handleoutput else :%s %d", pins[i].pinNameString, type);
             }
-            pins[i].lastSimValue = outValue;
+
             // Transform value
             //int outValueInt = map(outValue, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].pinMin, pins[i].pinMax);
             //outValueInt = mapValue(outValue, pins[i].pinMin, pins[i].pinMax, pins[i].center, pins[i].xplaneMin, pins[i].xplaneMax, pins[i].reverse, pins[i].xplaneExtra, pins[i].xplaneCenter);
@@ -839,12 +874,16 @@ void handleOutputs() {
 
                 break;
             case AO_TEXT: //
-
+                sprintf(pins[i].outString, "%f", outValue);
                 if (masters[pins[i].master].type == IS_ETH) {
 
                     setAnalogPinEth(masters[pins[i].master].socket, i, outValue);
+                    continue;
                 }
-                continue;
+                if (masters[pins[i].master].type == IS_SERIAL) {
+
+                    //setAnalogPinSerial(masters[pins[i].master].portNumber, i, outValue);
+                }
 
                 break;
             default:
@@ -854,12 +893,47 @@ void handleOutputs() {
                 break;
             }
             // if ethernet or serial
-
+            if (pins[i].prevValue != outValueInt) {
+                //display("                              changed pin %d prev:%d new:%d\n", i, pins[i].prevValue, outValueInt);
+                pins[i].changed = 2;
+                pins[i].prevValue = outValueInt;
+            }
+            sprintf(pins[i].outString, "%d", outValueInt);
             if (masters[pins[i].master].type == IS_SERIAL) {
-                setDigitalPinSerial(masters[pins[i].master].portNumber, i, outValueInt);
+                //setDigitalPinSerial(masters[pins[i].master].portNumber, i, outValueInt);
             }
             if (masters[pins[i].master].type == IS_ETH) {
                 setDigitalPinEth(masters[pins[i].master].socket, i, outValueInt);
+            }
+        }
+    }
+    for (int m = 0; m < MAXMASTERS; m++) {
+        for (int s = 0; s < MAXSLAVES; s++) {
+            int send = 0;
+            char out[512];
+            sprintf(out, "{%d;%d;0;", m, s);
+            for (int i = 0; i < nrOfPins; i++) {
+                if (pins[i].master == m && pins[i].slave == s) {
+                    if (pins[i].changed > 0 && strlen(pins[i].outString) > 0) {
+                        char setval[32];
+                        sprintf(setval, "%s=%s;", pins[i].pinNameString, pins[i].outString);
+                        strcat(out, setval);
+                        pins[i].changed = pins[i].changed - 1;
+                        send++;
+                    }
+                }
+            }
+            if (send > 0) {
+                strcat(out, "}\0");
+                if (masters[m].type == IS_SERIAL) {
+                    RS232_SendBuf(masters[m].portNumber, out, strlen(out) + 1);
+                    display("write do serial:%s", out);
+                }
+                if (masters[m].type == IS_ETH) {
+                    RS232_SendBuf(masters[m].portNumber, out, strlen(out) + 1);
+                    display("write do eth:%s", out);
+                    sendUDP(masters[m].socket, out, strlen(out) + 1);
+                }
             }
         }
     }

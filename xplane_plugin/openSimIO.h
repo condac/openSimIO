@@ -89,6 +89,7 @@ XPLM200—X-Plane 9.00 & newer
 #define IS_ETH 1
 #define IS_SERIAL 2
 #define MAXMASTERS 10
+#define MAXSLAVES 10
 
 #include "udp.h"
 typedef struct {

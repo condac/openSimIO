@@ -10,6 +10,8 @@
 FILE* configFile;
 char* filename = "Resources/plugins/openSimIO/config.txt";
 
+int sendcount = 0;
+
 void readConfig() {
     //masters = malloc(MAXMASTERS * sizeof(master_struct));
     for (int i = 0; i < MAXMASTERS; i++) {
@@ -17,18 +19,18 @@ void readConfig() {
             closeSocket(masters[i].socket);
         }
         if (masters[i].type == IS_SERIAL) {
-            RS232_CloseComport(masters[i].portNumber);
+            //RS232_CloseComport(masters[i].portNumber); // not working, restart x-plane to update config
         }
         masters[i].type = 0;
     }
     nrOfLines = 0;
     nrOfPins = 0;
-    XPLMDebugString("openSimIO.readConfig: getNrOfLines\n");
+    // XPLMDebugString("openSimIO.readConfig: getNrOfLines\n");
     nrOfLines = getNrOfLines(filename);
     char test[100];
     sprintf(test, "%d", nrOfLines);
-    XPLMDebugString(test);
-    XPLMDebugString("openSimIO.readConfig: getNrOfmasters\n");
+    // XPLMDebugString(test);
+    // XPLMDebugString("openSimIO.readConfig: getNrOfmasters\n");
     int nrOfMasters = getNrOfMasters(filename);
     nrOfMasters = nrOfMasters; // unused
     pins = malloc(nrOfLines * sizeof(pin_struct));
@@ -43,11 +45,11 @@ void readConfig() {
         ssize_t read;
         while ((read = getline(&line, &len, configFile)) != -1) {
             //display("%s", line);
-            XPLMDebugString("openSimIO.readConfig: lineToStruct\n");
-            XPLMDebugString(line);
+            // XPLMDebugString("openSimIO.readConfig: lineToStruct\n");
+            // XPLMDebugString(line);
             pin_struct* newPin = lineToStruct(line);
             if (newPin != NULL) {
-                XPLMDebugString("openSimIO.readConfig: lineToStruct memcpy\n");
+                // XPLMDebugString("openSimIO.readConfig: lineToStruct memcpy\n");
                 memcpy(pins + nrOfPins, newPin, sizeof(pin_struct));
                 nrOfPins++;
             }
@@ -208,16 +210,17 @@ void createSerialPorts() {
     for (int i = 0; i < MAXMASTERS; i++) {
         if (masters[i].type == IS_SERIAL) {
 
+            //int bdrate = 115200; /* 115200 baud */
             int bdrate = 115200; /* 115200 baud */
             char mode[] = {'8', 'N', '1', 0};
 
             char test[100];
             sprintf(test, "serial %d %s\n", i, masters[i].serialport);
             XPLMDebugString(test);
-
-            masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0, i);
-            XPLMDebugString("openSimIO: created serial port");
-
+            if (masters[i].portNumber == 0) {
+                masters[i].portNumber = RS232_OpenComport(masters[i].serialport, bdrate, mode, 0, i);
+                XPLMDebugString("openSimIO: created serial port");
+            }
             sprintf(test, "serial %d %s\n", masters[i].portNumber, masters[i].serialport);
             XPLMDebugString(test);
             if (masters[i].portNumber < 0) {
@@ -232,7 +235,7 @@ void createSerialPorts() {
     }
 }
 
-int sendcount = 0;
+
 
 void sendConfigReset() {
     sendcount = 0;
@@ -257,4 +260,16 @@ void sendConfig() {
             display("write config error:%s %s", out, masters[pins[i].master].ip);
         }
     }
+}
+
+void infoLog(const char* fmt, ...) {
+    char buffer[1024];
+    // if I ever send debug string longer than 1024 bytes - "HELIHUD: ",
+    // I will never find this error why application crashes :-)
+    va_list ap;
+    va_start(ap, fmt);
+    strcpy(buffer, "openSimIO:  ");
+    vsprintf(buffer + 9, fmt, ap);
+    va_end(ap);
+    XPLMDebugString(buffer);
 }

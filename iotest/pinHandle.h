@@ -308,6 +308,9 @@ void setupPins(uint8_t configArray[], int numberOfPins) {
     case MCP_DI:    // 
       setupMCPpin(i);
       break;
+    case MCP_DO:    // 
+      setupMCPpin(i);
+      break;
 #endif
     }
   }

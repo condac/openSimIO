@@ -12,5 +12,7 @@ void createSockets();
 void createSerialPorts();
 void sendConfig();
 void sendConfigReset();
+void infoLog(const char* fmt, ...);
 
+extern int sendcount;
 #endif

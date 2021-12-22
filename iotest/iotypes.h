@@ -22,4 +22,4 @@
 #define AO_STEPPER 136 // Stepper motor
 #define AO_LCD 137 // LCD Display
 #define MCP_DI 17
-#define MCP_DO 18
+#define MCP_DO 138

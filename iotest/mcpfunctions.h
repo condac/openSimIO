@@ -9,48 +9,76 @@ MCP23017 *mcp[MCP23017_MAX_BOARDS];
 
 bool mcp_board_setup[MCP23017_MAX_BOARDS];
 bool mcp_board_mode[MCP23017_MAX_BOARDS][2];
+
+uint8_t mcp_board_outpins[MCP23017_MAX_BOARDS][2];
 //bool mcp_board_pin[MCP23017_MAX_BOARDS][16];
 
 
-void setupMCPboard(int nr, int mode) {
-  Serial.print("setupMCPboard:");
-  Serial.print(nr);
-  Serial.print(" ");
-  Serial.println(mode);
+void setupMCPboard(int nr, int mode, int pin_onboard) {
+  
   int addr = 0x20;
   addr = addr+nr;
+//  Serial.print("setupMCPboard:");
+//  Serial.print(nr);
+//  Serial.print(" addr");
+//  Serial.print(addr);
+//  Serial.print(" mode");
+//  Serial.println(mode);
   mcp[nr] =  new MCP23017(addr);
   mcp[nr]->init();
-  if (mode == MCP_DI) {
-    mcp[nr]->portMode(MCP23017Port::A, 0b11111111); //Port A as input
-    mcp[nr]->portMode(MCP23017Port::B, 0b11111111); //Port B as input
-    mcp[nr]->writeRegister(MCP23017Register::GPPU_A, 0xFF);
-    mcp[nr]->writeRegister(MCP23017Register::GPPU_B, 0xFF);
-    mcp_board_mode[nr][0] = MCP_INPUT;
-    mcp_board_mode[nr][1] = MCP_INPUT;
-  }
-  else {
-    mcp[nr]->portMode(MCP23017Port::A, 0);          //Port A as output
-    mcp[nr]->portMode(MCP23017Port::B, 0);           //Port B as output
-    mcp_board_mode[nr][0] = MCP_OUTPUT;
-    mcp_board_mode[nr][1] = MCP_OUTPUT;
-  }
-  
 
-  mcp[nr]->writeRegister(MCP23017Register::GPIO_A, 0x00);  //Reset port A 
-  mcp[nr]->writeRegister(MCP23017Register::GPIO_B, 0x00);  //Reset port B
+  
   mcp_board_setup[nr] = 1;
 }
 
 void setupMCPpin(int pin) {
-    Serial.print("setupMCPpin:");
+//    Serial.print("setupMCPpin:");
 
-  Serial.println(pin);
+//  Serial.println(pin);
   int mcp_pin = pin - (DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT);
   int board = mcp_pin/16;
+  int pin_onboard = mcp_pin-(board*16);
+  int mode = pinsConfig[pin];
+//  Serial.print("mcp_pin:");
+//  Serial.print(mcp_pin);
+//  Serial.print(" board:");
+//  Serial.print(board);
+//  Serial.print("pin_onboard:");
+//  Serial.println(pin_onboard);
   if (!mcp_board_setup[board]) {
-    int mode = pinsConfig[pin];
-    setupMCPboard(board, mode);
+    
+    setupMCPboard(board, mode, pin_onboard);
+    
+  }
+  
+  if (pin_onboard>=0 and pin_onboard<=7) {
+    if (mode == MCP_DI) {
+      //Serial.println("set A as input");
+      mcp[board]->portMode(MCP23017Port::A, 0b11111111); //Port A as input
+      mcp[board]->writeRegister(MCP23017Register::GPPU_A, 0xFF);
+      mcp_board_mode[board][0] = MCP_INPUT;
+    }
+    else {
+      //Serial.println("set A as output");
+      mcp[board]->portMode(MCP23017Port::A, 0);          //Port A as output
+      mcp_board_mode[board][0] = MCP_OUTPUT;
+    }
+    mcp[board]->writeRegister(MCP23017Register::GPIO_A, 0x00);  //Reset port A 
+  }
+  
+  if (pin_onboard>=8 and pin_onboard<=15) {
+    if (mode == MCP_DI) {
+      //Serial.println("set B as input");
+      mcp[board]->portMode(MCP23017Port::B, 0b11111111); //Port B as input
+      mcp[board]->writeRegister(MCP23017Register::GPPU_B, 0xFF);
+      mcp_board_mode[board][1] = MCP_INPUT;
+    }
+    else {
+      //Serial.println("set B as output");
+      mcp[board]->portMode(MCP23017Port::B, 0);           //Port B as output
+      mcp_board_mode[board][1] = MCP_OUTPUT;
+    }
+    mcp[board]->writeRegister(MCP23017Register::GPIO_B, 0x00);  //Reset port B
   }
 }
 
@@ -92,5 +120,59 @@ void readMCPboards() {
 }
 
 void setMCPpin(int pin, int val) {
+  
+  
+  //return; // TODO
 
+
+
+  int mcp_pin = pin - (DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT);
+  int board = mcp_pin/16;
+  int pin_onboard = mcp_pin-(board*16);
+  int port = pin_onboard/8;
+//  Serial.print("setMCPpin");
+//  Serial.print(pin);
+//  Serial.print(" board");
+//  Serial.print(board);
+//  Serial.print(" port");
+//  Serial.print(board);
+//  Serial.print(" bit");
+//  Serial.println(pin_onboard-port*8);
+
+  if (val) {
+    bitSet(mcp_board_outpins[board][port], pin_onboard-port*8);
+  }
+  else {
+    bitClear(mcp_board_outpins[board][port], pin_onboard-port*8);
+  }
+}
+
+void writeMCPBoards() {
+
+
+
+  
+  //return; // TODO
+
+
+
+  
+  for (int i = 0; i<MCP23017_MAX_BOARDS; i++) {
+    if (mcp_board_setup[i]) {
+      if (mcp_board_mode[i][0] == MCP_OUTPUT) {
+        uint8_t currentA;
+        currentA = mcp_board_outpins[i][0];
+        mcp[i]->writePort(MCP23017Port::A, currentA);
+      }
+      if (mcp_board_mode[i][1] == MCP_OUTPUT) {
+        
+        uint8_t currentB;
+        currentB = mcp_board_outpins[i][1];
+        mcp[i]->writePort(MCP23017Port::B, currentB);
+        //Serial.print("writeboard b ");
+        //Serial.println(currentB);
+        
+      }
+    }
+  }
 }

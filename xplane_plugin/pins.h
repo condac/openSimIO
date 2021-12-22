@@ -35,8 +35,10 @@ typedef struct {
     char dataRefString[512];
     int output;
     int prevValue;
+    int changed;
     float prevValueF;
     float lastSimValue;
+    char outString[32];
 
 } pin_struct;
 

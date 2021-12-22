@@ -4,7 +4,7 @@
 // this is borrowed from https://github.com/PaulStoffregen/X-Plane_Plugin
 
 #define WIDTH 890
-#define LINES 30
+#define LINES 60
 
 static XPLMWindowID wStatus = NULL;
 
@@ -60,7 +60,7 @@ void statusDisplayInit(void) {
     printf("TeensyControls_display_init\n");
     if (statusDisplayShow) {
         if (!wStatus) {
-            wStatus = XPLMCreateWindow(50, 590, 950, 50, 1, drawStatus, keyStatus, mouseStatus, NULL);
+            wStatus = XPLMCreateWindow(50, 1440, 950, 50, 1, drawStatus, keyStatus, mouseStatus, NULL);
             headStatus = 0;
         }
     } else {
@@ -75,7 +75,7 @@ void statusDisplayToggle(void) {
     printf("TeensyControls_display_init\n");
     if (statusDisplayShow) {
         if (!wStatus) {
-            wStatus = XPLMCreateWindow(50, 590, 950, 50, 1, drawStatus, keyStatus, mouseStatus, NULL);
+            wStatus = XPLMCreateWindow(50, 1440, 950, 50, 1, drawStatus, keyStatus, mouseStatus, NULL);
             headStatus = 0;
             //memset(text, 0, sizeof(text));
         }
