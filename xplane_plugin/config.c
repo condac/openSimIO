@@ -226,38 +226,37 @@ void createSerialPorts() {
             if (masters[i].portNumber < 0) {
                 display("Error %d: Can not open comport %s\n", masters[i].portNumber, masters[i].serialport);
                 //XPLMDebugString("openSimIO: Error Can not open comport ", masters[i].portNumber, masters[i].serialport);
-                XPLMDebugString(masters[i].portNumber);
-                XPLMDebugString(" ");
-                XPLMDebugString(masters[i].serialport);
-                XPLMDebugString("\n");
+                infoLog("Error %d: Can not open comport %s\n", masters[i].portNumber, masters[i].serialport);
             }
         }
     }
 }
 
-
-
 void sendConfigReset() {
     sendcount = 0;
 }
+int sendTimer = 0;
 void sendConfig() {
     char out[512];
+    sendTimer++;
+    if (sendTimer > 10) {
+        sendTimer = 0;
+        // send digital data to arduino
+        if (sendcount < nrOfPins) {
+            int i = sendcount;
+            sendcount++;
+            //{1;2;0;D3,1,0;A2,5,3;}
+            int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
 
-    // send digital data to arduino
-    if (sendcount < nrOfPins) {
-        int i = sendcount;
-        sendcount++;
-        //{1;2;0;D3,1,0;A2,5,3;}
-        int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
-
-        if (masters[pins[i].master].type == IS_SERIAL) {
-            display("write config serial:%s %s", out, masters[pins[i].master].ip);
-            RS232_SendBuf(masters[pins[i].master].portNumber, out, len + 1);
-        } else if (masters[pins[i].master].type == IS_ETH) {
-            display("write config eth:%s %s", out, masters[pins[i].master].ip);
-            sendUDP(masters[pins[i].master].socket, out, len + 1);
-        } else {
-            display("write config error:%s %s", out, masters[pins[i].master].ip);
+            if (masters[pins[i].master].type == IS_SERIAL) {
+                display("write config serial:%s %s", out, masters[pins[i].master].ip);
+                RS232_SendBuf(masters[pins[i].master].portNumber, out, len);
+            } else if (masters[pins[i].master].type == IS_ETH) {
+                display("write config eth:%s %s", out, masters[pins[i].master].ip);
+                sendUDP(masters[pins[i].master].socket, out, len + 1);
+            } else {
+                display("write config error:%s %s", out, masters[pins[i].master].ip);
+            }
         }
     }
 }

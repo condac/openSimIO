@@ -39,6 +39,7 @@ typedef struct {
     float prevValueF;
     float lastSimValue;
     char outString[32];
+    char outStringPrev[32];
 
 } pin_struct;
 

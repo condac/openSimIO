@@ -13,6 +13,8 @@ void createSerialPorts();
 void sendConfig();
 void sendConfigReset();
 void infoLog(const char* fmt, ...);
-
+#if defined(WINDOWS) || defined(WINDOWS64)
+int64_t getline(char** restrict line, size_t* restrict len, FILE* restrict fp);
+#endif
 extern int sendcount;
 #endif

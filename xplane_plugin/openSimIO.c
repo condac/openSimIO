@@ -185,9 +185,9 @@ PLUGIN_API int XPluginEnable(void) {
 }
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
-    char test[200];
-    sprintf(test, "inFrom %d inMsg %ld inParam %d \n", inFrom, inMsg, (int)inParam);
-    XPLMDebugString(test);
+    //char test[200];
+    //sprintf(test, "inFrom %d inMsg %ld inParam %d \n", inFrom, inMsg, (int)inParam);
+    //XPLMDebugString(test);
     if (inFrom == XPLM_PLUGIN_XPLANE) {
         switch (inMsg) {
         case XPLM_MSG_PLANE_LOADED:

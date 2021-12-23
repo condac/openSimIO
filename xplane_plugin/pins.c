@@ -875,9 +875,10 @@ void handleOutputs() {
                 break;
             case AO_TEXT: //
                 sprintf(pins[i].outString, "%f", outValue);
+
                 if (masters[pins[i].master].type == IS_ETH) {
 
-                    setAnalogPinEth(masters[pins[i].master].socket, i, outValue);
+                    //setAnalogPinEth(masters[pins[i].master].socket, i, outValue);
                     continue;
                 }
                 if (masters[pins[i].master].type == IS_SERIAL) {
@@ -892,18 +893,24 @@ void handleOutputs() {
 
                 break;
             }
+            sprintf(pins[i].outString, "%d", outValueInt);
+
+            if (strncmp(pins[i].outStringPrev, pins[i].outString, 32) != 0) {
+                pins[i].changed = 2;
+                strncpy(pins[i].outStringPrev, pins[i].outString, 32);
+            }
             // if ethernet or serial
             if (pins[i].prevValue != outValueInt) {
                 //display("                              changed pin %d prev:%d new:%d\n", i, pins[i].prevValue, outValueInt);
-                pins[i].changed = 2;
+                // pins[i].changed = 2;
                 pins[i].prevValue = outValueInt;
             }
-            sprintf(pins[i].outString, "%d", outValueInt);
+
             if (masters[pins[i].master].type == IS_SERIAL) {
                 //setDigitalPinSerial(masters[pins[i].master].portNumber, i, outValueInt);
             }
             if (masters[pins[i].master].type == IS_ETH) {
-                setDigitalPinEth(masters[pins[i].master].socket, i, outValueInt);
+                //setDigitalPinEth(masters[pins[i].master].socket, i, outValueInt);
             }
         }
     }
