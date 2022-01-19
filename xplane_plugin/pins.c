@@ -917,17 +917,20 @@ void handleOutputs() {
     for (int m = 0; m < MAXMASTERS; m++) {
         for (int s = 0; s < MAXSLAVES; s++) {
             int send = 0;
-            char out[512];
+            char out[5120];
             sprintf(out, "{%d;%d;0;", m, s);
             for (int i = 0; i < nrOfPins; i++) {
                 if (pins[i].master == m && pins[i].slave == s) {
-                    if (pins[i].changed > 0 && strlen(pins[i].outString) > 0) {
-                        char setval[32];
-                        sprintf(setval, "%s=%s;", pins[i].pinNameString, pins[i].outString);
-                        strcat(out, setval);
-                        pins[i].changed = pins[i].changed - 1;
-                        send++;
+                    if (send<16) {
+                        if (pins[i].changed > 0 && strlen(pins[i].outString) > 0) {
+                            char setval[64];
+                            sprintf(setval, "%s=%s;", pins[i].pinNameString, pins[i].outString);
+                            strcat(out, setval);
+                            pins[i].changed = pins[i].changed - 1;
+                            send++;
+                        }
                     }
+                    
                 }
             }
             if (send > 0) {

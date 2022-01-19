@@ -367,7 +367,7 @@ int ifCharInArray(char* str, char val) {
     return -1;
 }
 
-char inputbuf[8200];
+//char inputbuf[8200];
 
 float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void* inRefcon) {
 
@@ -401,7 +401,8 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
         }
         if (masters[i].type == IS_ETH) {
             //display("masterETH");
-            while (ifMessage(masters[i].socket)) {
+            int limit = 60;
+            while (ifMessage(masters[i].socket) && limit >0) {
                 int res = readUDP(masters[i].socket, buf, 4095);
                 //int test = ifMessage(asock);
                 if (res > 0) {
@@ -415,6 +416,7 @@ float MyFlightLoopCallback(float inElapsedSinceLastCall, float inElapsedTimeSinc
                         parseSerialInput(buf, res);
                     }
                 }
+                limit--;
             }
 
             if (lastSignal < elapsed - 5.0) {
