@@ -34,7 +34,9 @@ void readConfig() {
     int nrOfMasters = getNrOfMasters(filename);
     nrOfMasters = nrOfMasters; // unused
     pins = malloc(nrOfLines * sizeof(pin_struct));
-
+    
+    memset(pins, 0, nrOfLines * sizeof(pin_struct));
+    
     if ((configFile = fopen(filename, "r")) == NULL) {
         XPLMDebugString("openSimIO.readConfig: error opening configfile\n");
         display("Error! opening configfile");
@@ -239,7 +241,7 @@ int sendTimer = 0;
 void sendConfig() {
     char out[512];
     sendTimer++;
-    if (sendTimer > 10) {
+    if (sendTimer > 5) {
         sendTimer = 0;
         // send digital data to arduino
         if (sendcount < nrOfPins) {

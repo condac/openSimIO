@@ -282,7 +282,8 @@ void parseMessage(char* data) {
     x = inputString[pos];
     while (x != '\0') {
 
-        char* tempString = malloc(300);
+        char* tempString = malloc(4000);
+        memset(tempString,0,4000);
         char* tmp = tempString;
         strcpy(tempString, inputString + pos);
         for (int i = 0; i < 10; i++) {
