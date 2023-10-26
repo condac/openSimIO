@@ -94,3 +94,5 @@ cd ..
 
 cp -r $TARGETDIR ~/.local/share/Steam/SteamApps/common/X-Plane\ 11/Resources/plugins/
 cp -r $TARGETDIR ~/.steam/steam/steamapps/common/X-Plane\ 11/Resources/plugins/
+
+cp -r $TARGETDIR/64/lin.xpl ~/X-Plane\ 12/Resources/plugins/openSimIO/64

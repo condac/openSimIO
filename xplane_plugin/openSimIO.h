@@ -67,7 +67,31 @@
 #    include <dbt.h>
 //#include "thread.h"
 #endif
+#if IBM
+#    include <windows.h>
+#endif
+#if LIN
+#    ifndef NO_GLEW
+#        include <GL/glew.h>
+#    endif
+#    include <GL/gl.h> // apt install mesa-common-dev
+#    include <GL/glu.h>
+//#    include <GL/glut.h>
+#    include <GL/glext.h>
 
+#elif __GNUC__
+#    ifndef NO_GLEW
+#        include <GL/glew.h>
+#    endif
+#    include <GL/gl.h>
+#    include <GL/glu.h>
+#    include <GL/glext.h>
+#else
+//#    include <GL/glew.h>
+#    include <GL/gl.h>
+#    include <GL/glu.h>
+#    include <GL/glext.h>
+#endif
 /*
 XPLM301—X-Plane 11.20 & newer (64-bit only)
 XPLM300—X-Plane 11.10 & newer (64-bit only)
@@ -75,9 +99,11 @@ XPLM210—X-Plane 10.00 & newer (10.20 required for 64-bit plugins)
 XPLM200—X-Plane 9.00 & newer
 */
 #define XPLM200 1
-//#define XPLM210 1
-//#define XPLM300 1
-//#define XPLM301 1
+#define XPLM210 1
+#define XPLM300 1
+#define XPLM301 1
+#define XPLM302 1
+#define XPLM303 1
 
 #include "XPLMDisplay.h" // download xplane SDK and put in SDK folder https://developer.x-plane.com/sdk/plugin-sdk-downloads/
 #include "XPLMGraphics.h"

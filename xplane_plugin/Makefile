@@ -46,11 +46,12 @@ else ifeq ($(OS), WINDOWS64)
 #  sudo apt-get install  gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
 #  x86_64-w64-mingw32-gcc
 CC ?= x86_64-w64-mingw32-gcc
-INC += -ISDK/CHeaders/XPLM -ISDK/CHeaders/Widgets
+INC += -ISDK/CHeaders/XPLM -ISDK/CHeaders/Widgets -I/mingw64/include -I./glew/glew-2.2.0/include
 CFLAGS += -Wall -O2 -D$(OS) $(INC)
 LDFLAGS += -Wl,--version-script=exports.txt
 LDDYNFLAGS += -shared
 LIBS += SDK/Libraries/Win/XPLM_64.lib -lhid -lsetupapi -lwsock32
+LIBS += -L/mingw64/lib -L./lib64/ -lopengl32 -lglu32 -lglew32
 TARGET ?= win.xpl
 endif
 
@@ -59,7 +60,7 @@ endif
 
 all: openSimIO.xpl copy
 
-OBJS = openSimIO.o display.o rs232.o pins.o udp.o statusDisplay.o iotypes.o config.o
+OBJS = openSimIO.o display.o rs232.o pins.o udp.o statusDisplay.o iotypes.o config.o vectorfont.o
 
 openSimIO.xpl: $(OBJS)
 	$(CC) $(LDFLAGS) $(LDDYNFLAGS) $(OBJS) -o openSimIO.xpl $(LIBS)
