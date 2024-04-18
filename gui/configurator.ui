@@ -26,6 +26,9 @@
       </item>
       <item row="2" column="0">
        <widget class="QPushButton" name="pushButton_2">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Test Config</string>
         </property>
@@ -33,6 +36,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QPushButton" name="pushButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Connect</string>
         </property>
@@ -52,6 +58,11 @@
            <height>429</height>
           </rect>
          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout"/>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>

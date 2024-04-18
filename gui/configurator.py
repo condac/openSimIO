@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFileDialog, QDialog
 from PyQt5.QtCore import QTimer,QDateTime, QFile, QTextStream, Qt
 from PyQt5.QtGui import QFont
 
@@ -94,8 +94,11 @@ def ioModeFromString(instr):
 def ioModeFromInt():
     return 0
     
-class ConfLine():
-    def __init__(self,line):
+class ConfLine(QWidget):
+    def __init__(self,line, parent=None):
+        super().__init__()
+        self.ui = uic.loadUi("line.ui", self)
+        self.parent = parent
         self.rawLine = line
         self.known = False
         self.master = "1"
@@ -104,13 +107,92 @@ class ConfLine():
         self.pinName = "D0"
         self.pinExtra = "0"
         
-        self.readLine(line)
-        
+        self.known = self.readLine(line)
+        if self.known:
+            self.parent.addWidget2(self)
+    
     def readLine(self, line):
-        return
+        if len(line) > 0:
+            if line[0] == '#' or line[0] == '/' or line[0] == '*':
+                return False
+            else:
+                print("config line", line)
+                sline = line.split(";")
+                print(len(sline))
+                if len(sline) == 13:
+                    msp = sline[0].split(".")
+                    if (len(msp) == 3):
+                        self.master = msp[0]
+                        self.slave = msp[1]
+                        self.pinName = msp[2]
+                    self.pinExtra = sline[1]
+                    self.ioMode = sline[2]
+                    self.invert = sline[3]
+                    self.center = sline[4]
+                    self.min = sline[5]
+                    self.max = sline[6]
+                    self.dataref = sline[7]
+                    self.xpcenter = sline[8]
+                    self.xpmin = sline[9]
+                    self.xpmax = sline[10]
+                    self.xpexp = sline[11]
+                    self.commentAndLinebreak = sline[12]
+                    
+                    self.ui.lineEditMaster.setText(self.master)
+                    self.ui.lineEditSlave.setText(self.slave)
+                    self.ui.lineEditPin.setText(self.pinName)
+                    self.ui.lineEditPinExtra.setText(self.pinExtra)
+                    self.ui.lineEditIOMode.setText(self.ioMode)
+                    self.ui.lineEditInverted.setText(self.invert)
+                    self.ui.lineEditCenter.setText(self.center)
+                    self.ui.lineEditMin.setText(self.min)
+                    self.ui.lineEditMax.setText(self.max)
+                    self.ui.lineEditDataref.setText(self.dataref)
+                    self.ui.lineEditXpCenter.setText(self.xpcenter)
+                    self.ui.lineEditXpMin.setText(self.xpmin)
+                    self.ui.lineEditXpMax.setText(self.xpmax)
+                    self.ui.lineEditXpExp.setText(self.xpexp)
+                    
+                    self.ui.lineEditDataref.sizeHint()
+                return True
+        return False
+        
+    def readUIValues(self):
+        self.master = self.ui.lineEditMaster.text()
+        self.slave = self.ui.lineEditSlave.text()
+        self.pinName = self.ui.lineEditPin.text()
+        self.pinExtra = self.ui.lineEditPinExtra.text()
+        self.ioMode = self.ui.lineEditIOMode.text()
+        self.invert = self.ui.lineEditInverted.text()
+        self.center = self.ui.lineEditCenter.text()
+        self.min = self.ui.lineEditMin.text()
+        self.max = self.ui.lineEditMax.text()
+        self.dataref = self.ui.lineEditDataref.text()
+        self.xpcenter = self.ui.lineEditXpCenter.text()
+        self.xpmin = self.ui.lineEditXpMin.text()
+        self.xpmax = self.ui.lineEditXpMax.text()
+        self.xpexp = self.ui.lineEditXpExp.text()
         
     def getSaveLine(self):
-        out = self.rawLine + "\n"
+        self.readUIValues()
+        if self.known:
+            out = ""
+            out += str(self.master) + "." + str(self.slave) + "." +str(self.pinName) + ";"
+            out += str(self.pinExtra) + ";"
+            out += str(self.ioMode) + ";"
+            out += str(self.invert) + ";"
+            out += str(self.center) + ";"
+            out += str(self.min) + ";"
+            out += str(self.max) + ";"
+            out += str(self.dataref) + ";"
+            out += str(self.xpcenter) + ";"
+            out += str(self.xpmin) + ";"
+            out += str(self.xpmax) + ";"
+            out += str(self.xpexp) + ";"
+            out += self.commentAndLinebreak + "\n"
+            
+        else:
+            out = self.rawLine + "\n"
         
         return out
         
@@ -191,19 +273,34 @@ class RunGUI(QMainWindow):
                     continue
                 else:
                     print("config line", line)
-                    newconf = ConfLine(line)
-                    self.ioList.append(newconf)
+                    # newconf = ConfLine(line, parent=self)
+                    # self.ioList.append(newconf)
                     
     def createConfigLines(self, data):
         lines = data.split("\n")
         for line in lines:
-            self.confLines.append(ConfLine(line))
+            self.confLines.append(ConfLine(line, parent=self))
+            
+    def addWidget2(self, ww):
+        self.ui.verticalLayout.addWidget(ww)
+        
     
     def saveConfigFile(self):
-        with open("outfile.txt", "w") as outfile:
-            for line in self.confLines:
-                out = line.getSaveLine()
-                outfile.write(out)
+        
+        dialog = QFileDialog(self)
+        dialog.setWindowTitle("Save config")
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        dialog.setNameFilter("Config text (*.txt)")
+        dialog.setFileMode(QFileDialog.AnyFile)
+        dialog.setDefaultSuffix("txt")
+        if dialog.exec_() == QDialog.Accepted:
+            filename = str(dialog.selectedFiles()[0])
+            print(filename)
+            
+            with open(filename, "w") as outfile:
+                for line in self.confLines:
+                    out = line.getSaveLine()
+                    outfile.write(out)
         
         
     def sendConfig(self):
