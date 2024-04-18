@@ -1,0 +1,50 @@
+# Copy and rename this to config.txt
+# Hash tag is considered a comment, can only be in beginning of sentence
+# You must fill in all fields even if analog scales is not used by digital inputs etc...
+
+# masterId.slaveId.Pin;pinExtra;iomode;reverse;center;pinMin;pinMax;xplaneDataRef;xplaneCenter;xplaneMin;xplaneMax;xplaneExtra;
+
+# example string:
+# 1.0.D5;0;DI_INPUT_PULLUP;0;0;0;1;sim/cockpit/switches/pitot_heat_on;0;0;1;0;
+# 1.0.A0;0;AI_RAW;0;500;100;900;sim/joystick/yoke_pitch_ratio;0.0;-1.0;1.0;0;
+
+/1;n;192.168.0.105 34555/ # this tells it to use ethernet
+
+
+# Set D13 to an output displaying the status of the pitot switch.
+1.0.D13;0;DO_BOOL;0;0;0;1;sim/cockpit/switches/pitot_heat_on;0;0;1;0;
+
+
+# Set analog inputs for stick movements
+#Roll
+1.0.A0;0;AI_RAW;1;523;10;1000;sim/joystick/yoke_roll_ratio;0;-1.0;1.0;0;
+
+#Pitch
+1.0.A1;0;AI_RAW;1;523;10;1000;sim/joystick/yoke_pitch_ratio;0;-1.0;1.0;0;
+
+#Rudder
+1.0.A2;0;AI_RAW;0;530;175;1000;sim/joystick/yoke_heading_ratio;0;-1.0;1.0;0;
+
+#Throttle
+1.0.A3;0;AI_FILTER;1;800;300;950;sim/cockpit2/engine/actuators/throttle_jet_rev_ratio_all;0;-1.0;1.0;1;
+
+
+
+
+# Servo test The Servo.h library wants 0-180 as value.
+#1.0.D8;0;AO_SERVO;0;0;0;180;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0;0;100;0;
+
+# PWM test
+#1.0.D3;0;AO_PWM;0;0;0;255;sim/cockpit2/gauges/indicators/airspeed_kts_pilot;0.0;0.0;100.0;1;
+
+# Rotary test
+#1.0.D22;0;DI_ROTARY_ENCODER_TYPE1;0;10.0;0;0;sim/cockpit/radios/com1_freq_hz;0;0;1;0; ## It will use pin+1 as the secondary pin
+
+# Display output test
+#1.0.D2;3;DO_TM1637_DEC;0;0;0;360;sim/cockpit2/gauges/indicators/compass_heading_deg_mag;0;0;360;0; # CLK on pin and DIO on pinExtra
+
+#Override command
+#*sim/operation/override/override_wheel_steer;1;
+#1.0.A1;0;AI_FILTER;0;504;140;944;sim/flightmodel2/gear/tire_steer_command_deg[0];0;-90.0;90.0;3;
+# Stepper test
+#1.0.D2;0;AO_STEPPER;0;1800;0;3600;sim/cockpit2/gauges/indicators/heading_electric_deg_mag_pilot;0;0;360;0;
