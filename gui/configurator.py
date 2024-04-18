@@ -97,7 +97,8 @@ def ioModeFromInt():
 class ConfLine(QWidget):
     def __init__(self,line, parent=None):
         super().__init__()
-        self.ui = uic.loadUi(os.path.join(current_dir, "line.ui"), self))
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.ui = uic.loadUi(os.path.join(current_dir, "line.ui"), self)
         self.parent = parent
         self.rawLine = line
         self.known = False
