@@ -15,6 +15,14 @@ import time
 import colorsys
 import traceback
 import threading
+import socket
+import select
+from time import sleep
+
+
+
+UDP_PORT = 34555
+UDP_IP = "192.168.0.105"
 
 from pathlib import Path
 
@@ -91,9 +99,14 @@ def ioModeFromString(instr):
         return 138
     return 0
     
+
 def ioModeFromInt():
     return 0
-    
+
+def mapf( x,  in_min,  in_max,  out_min,  out_max):
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+
 class ConfLine(QWidget):
     def __init__(self,line, parent=None):
         super().__init__()
@@ -107,6 +120,9 @@ class ConfLine(QWidget):
         self.ioMode = "NOTUSED"
         self.pinName = "D0"
         self.pinExtra = "0"
+        
+        self.avglist = []
+        self.avglist.append(0)
         
         self.known = self.readLine(line)
         if self.known:
@@ -155,6 +171,8 @@ class ConfLine(QWidget):
                     self.ui.lineEditXpExp.setText(self.xpexp)
                     
                     self.ui.lineEditDataref.sizeHint()
+                if int(self.master) != 1:
+                    return False
                 return True
         return False
         
@@ -212,14 +230,65 @@ class ConfLine(QWidget):
     def getpinExtra(self):
         return str(self.pinExtra) 
         
+    def getAvgValue(self, newdata):
+        self.avglist.append(float(newdata))
+        if len(self.avglist)> 20:
+            self.avglist.pop(0)
+        avgvalue = 0.0
+        for val in self.avglist:
+            avgvalue += val
+        if (len(self.avglist) != 0):
+            avgvalue = avgvalue/len(self.avglist)
+        else:
+            avgvalue = 0
+        return avgvalue
+        
+    def getXPlaneValue(self, newdata):
+        ndata = float(newdata)
+        self.readUIValues()
+        out = 0.0
+        invert = int(self.invert)
+        if (invert == 1):
+            xpmin = float(self.xpmax)
+            xpmax = float(self.xpmin)
+        else:
+            xpmin = float(self.xpmin)
+            xpmax = float(self.xpmax)
+        xpcenter = float(self.xpcenter)
+        
+        min = float(self.min)
+        max = float(self.max)
+        center = float(self.center)
+            
+        if (ndata >= min and ndata < center):
+            out = mapf(ndata, min, center, xpmin, xpcenter)
+        if (ndata >= center and ndata < max):
+            out = mapf(ndata, center, max, xpcenter, xpmax)
+        if ndata < min:
+            out = xpmin
+        if ndata > max:
+            out = xpmax
+        
+        return out
+        
+    def setLiveData(self, data):
+        self.ui.labelLiveValue.setText(str(data))
+        avg = int(self.getAvgValue(data))
+        self.ui.labelLiveCenter.setText(str(avg))
+        
+        xpval = self.getXPlaneValue(data)
+        self.ui.labelLiveXp.setText(str(xpval))
+        
 class RunGUI(QMainWindow):
     def __init__(self,):
         super(RunGUI,self).__init__()
 
-        self.masters = []
+        self.masters = {}
         self.ioList = []
         self.confLines = []
-
+        
+        self.connected = False
+        self.sock = None
         
         self.initUI()
         
@@ -236,7 +305,9 @@ class RunGUI(QMainWindow):
         #self.setWindowFlags(Qt.WindowStaysOnTopHint)
         
         
-        self.ui.pushButton.clicked.connect(self.buttonClicked)
+        self.ui.pushButtonConnect.clicked.connect(self.buttonConnect)
+        self.ui.pushButtonDisconnect.clicked.connect(self.buttonDisconnect)
+        self.ui.pushButton_Test.clicked.connect(self.buttonClickedTest)
         self.ui.actionOpen_config_file.triggered.connect(self.loadConfigFile)
         self.ui.actionSave.triggered.connect(self.saveConfigFile)
 
@@ -250,21 +321,105 @@ class RunGUI(QMainWindow):
         self.timer.start(100)
 
 
-    def buttonClicked(self):
-        print("button")
+    def buttonConnect(self):
+        print("buttonConnect")
+        if ("1" in self.masters):
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+            self.sock.bind(("0.0.0.0", int(self.masters["1"]["port"]) ))
+            self.sock.settimeout(1.0)
+            self.connected = True
         
+    def buttonDisconnect(self):
+        print("buttonDisconnect")
+        self.sock.close()
+        self.connected = False
+        
+    def buttonClickedTest(self):
+        print("button test")
+        self.sendConfig()
+        
+    def handleIncomingData(self, data):
+        strdata = data.decode()
+        if ("{99;1;0" in strdata):
+            sdata = strdata.split(";")
+            if len(sdata)>=4:
+                idata = sdata[3].split(",")
+                
+                for pindata in idata:
+                    # print(pindata)
+                    pp = pindata.split(" ")
+                    if len(pp)>=2:
+                        # print(pp)
+                        pinName = pp[0]
+                        pinData = pp[1]
+                        for line in self.confLines:
+                            if line.known:
+                                if line.pinName == pinName:
+                                    line.setLiveData(pinData)
+        
+    def readArduino(self):
+        if ("1" in self.masters):
+            self.ui.labelip.setText(self.masters["1"]["ip"])
+            self.ui.labelport.setText(str(self.masters["1"]["port"]))
+        
+        if self.connected and self.sock != None:
+            self.ui.labelconnected.setText("Connected")
+            # print("send CTS arduino")
+            outstr = "*"
+            out = outstr.encode('utf-8')
+            # self.sock.sendto(out, (UDP_IP, UDP_PORT))
+            if ("1" in self.masters):
+                self.sock.sendto(out, (self.masters["1"]["ip"], int(self.masters["1"]["port"]) ))
+            
+            
+            # print("read arduino")
+            socket_list = [sys.stdin, self.sock]
+
+            # Get the list sockets which are readable
+            read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [], 0)
+            
+            for sock in read_sockets:
+                # print("for")
+                #incoming message from remote server
+                if sock == self.sock:
+                    
+                    # print("if")
+                    data = sock.recv(1024)
+                    print(data.decode())
+                    self.handleIncomingData(data)
+        else:
+            
+            self.ui.labelconnected.setText("Not connected")
+        pass
         
     def loop(self):
+        self.readArduino()
         return
         #print("loop")
         
+    def createMasterSocket(self, data):
+        if "/1;n;" in data:
+            data2 = data.replace("/", "")
+            sdata = data2.split(";")
+            if len(sdata)>=3:
+                ldata = sdata[2].split(" ")
+                if (len(ldata)>=2):
+                    master = {}
+                    master["ip"] = ldata[0]
+                    master["port"] = ldata[1]
+                    
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+                    
+                    self.masters[sdata[0]] = master
         
     def findMasters(self, data):
+        print("findMasters")
         lines = data.split("\n")
         for line in lines:
             if len(line) > 5:
                 if line[0] == '/':
                     print("found master", line)
+                    self.createMasterSocket(line)
                     
     def findIOLines(self, data):
         lines = data.split("\n")
@@ -305,9 +460,21 @@ class RunGUI(QMainWindow):
         
         
     def sendConfig(self):
+        if self.connected == False:
+            return
         #int len = sprintf(out, "{%d;%d;1;%s,%d,%d;}", pins[i].master, pins[i].slave, pins[i].pinNameString, pins[i].ioMode, pins[i].pinExtra);
-        out = "{"+master+";"+slave+";1;"+pinName+","+ioMode+","+pinExtra+";}"
-        print("send", out)
+        # outstr = "{"+master+";"+slave+";1;"+pinName+","+ioMode+","+pinExtra+";}"
+        for line in self.confLines:
+            if line.known:
+                out = line.getSaveLine()
+                print(out)
+            
+                # outstr = "{1;0;1;A0,4,0;}"
+                outstr = "{"+line.master+";"+line.slave+";1;"+line.pinName+","+str(ioModeFromString(line.ioMode))+","+line.pinExtra+";}"
+                out = outstr.encode('utf-8')
+                print("send", out)
+                self.sock.sendto(out, (self.masters[line.master]["ip"], int(self.masters[line.master]["port"]) ))
+                sleep(0.15)
         
     def parseConfig(self, data):
         self.findMasters(data)
