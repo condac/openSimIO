@@ -371,22 +371,26 @@ class RunGUI(QMainWindow):
             if ("1" in self.masters):
                 self.sock.sendto(out, (self.masters["1"]["ip"], int(self.masters["1"]["port"]) ))
             
-            
-            # print("read arduino")
-            socket_list = [sys.stdin, self.sock]
+            moredata = True
+            while moredata:
+                # print("read arduino")
+                moredata = False
+                socket_list = [socket.socket(), self.sock]
 
-            # Get the list sockets which are readable
-            read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [], 0)
-            
-            for sock in read_sockets:
-                # print("for")
-                #incoming message from remote server
-                if sock == self.sock:
+                # Get the list sockets which are readable
+                read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [], 0)
+                
+                for sock in read_sockets:
+                    # print("for")
+                    #incoming message from remote server
+                    if sock == self.sock:
+                        
+                        # print("if")
+                        data = sock.recv(1024)
+                        print(data.decode())
+                        self.handleIncomingData(data)
+                        moredata = True
                     
-                    # print("if")
-                    data = sock.recv(1024)
-                    print(data.decode())
-                    self.handleIncomingData(data)
         else:
             
             self.ui.labelconnected.setText("Not connected")
