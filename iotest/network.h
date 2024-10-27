@@ -5,7 +5,6 @@
 #include <EthernetUdp.h>
 
 
-unsigned int localPort = 34555;      // local port to listen on // Remember to use a different port if using multiple masters
 
 // buffers for receiving and sending data
 //char ReplyBuffer[UDP_TX_PACKET_MAX_SIZE];        // a string to send back
