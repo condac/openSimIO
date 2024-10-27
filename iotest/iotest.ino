@@ -20,11 +20,29 @@ uint8_t pinsExtra[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT];
 uint8_t pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT];
 
 
+#ifdef ETHERNET
+#define UDP_PACKET_SIZE 512
+char packetBuffer[UDP_PACKET_SIZE];  // buffer to hold incoming packet,
+
+#endif
+
+
+
+int myId = 0; // this will automaticly be set by the chain ping loop
+bool cts = true;
+bool unconfigured = true;
+long loops = 0;
+int cyclic = 0;
+
+
+
 #include "iotypes.h"
+
 
 #ifdef ROTARY_ENCODER
 #include "rotaryEncoder.h"
 #endif
+
 
 #ifdef TM1637
 #include "tm1637functions.h"
@@ -46,20 +64,13 @@ uint8_t pin_changed[DIGITAL_PIN_COUNT+ANALOG_PIN_COUNT+MCP_PIN_COUNT];
 # include "mcpfunctions.h" // // Uses 964 bytes of program memory and 881 bytes of memory
 #endif
 
-
-int myId = 0; // this will automaticly be set by the chain ping loop
-bool cts = true;
-bool unconfigured = true;
-long loops = 0;
-int cyclic = 0;
 #include "pinHandle.h"
+
 
 #ifdef ETHERNET
 void setConfig(int nr, int mode, int extra);
 #include "network.h" // Uses 5064 bytes of program memory and 253 bytes of memory
 #endif
-
-
 
 
 long frametime;
@@ -652,12 +663,13 @@ void handleConfigMessage(HardwareSerial& inSerial) {
 //        pcSerial.print("extra: ");
 //        pcSerial.println(pinExtra);
     setConfig(pinNr, pinmode, pinExtra);
+    setupPinN(pinNr);
     waitForData(inSerial, 2);
     data = inSerial.read();
 //    pcSerial.println(data);
   }
   
-  setupAllPins();
+  //setupAllPins();
 //  pcSerial.println("end handleConfig");
 }
 

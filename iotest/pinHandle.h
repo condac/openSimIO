@@ -204,9 +204,9 @@ void handleDigitalPins() {
   
 }*/
 
-void setupPins(uint8_t configArray[], int numberOfPins) {
-  for (int i = 0; i<numberOfPins; i++) {
-    switch (configArray[i]) {
+void setupPinN(int pin) {
+  int i = pin;
+  switch (pinsConfig[i]) {
     case 0:    // not configured
       // do nothing
       break;
@@ -251,7 +251,7 @@ void setupPins(uint8_t configArray[], int numberOfPins) {
     case DI_ROTARY_ENCODER_TYPE1:    // same as with pullup, only setup initiation is different
       pinMode(i, INPUT_PULLUP);
       pinMode(i+1, INPUT_PULLUP);
-      configArray[i+1] = NOTUSED;
+      pinsConfig[i+1] = NOTUSED;
       break;
     case DI_3WAY_2:    // 
       pinMode(i, INPUT_PULLUP);
@@ -262,7 +262,7 @@ void setupPins(uint8_t configArray[], int numberOfPins) {
 //      pinMode(pinsExtra[i]+1, OUTPUT);
 //      digitalWrite(pinsExtra[i]+1,LOW);
       
-      configArray[pinsExtra[i]] = NOTUSED;
+      pinsConfig[pinsExtra[i]] = NOTUSED;
   
       break;
 #ifdef TM1637
@@ -289,13 +289,13 @@ void setupPins(uint8_t configArray[], int numberOfPins) {
       pinMode(i+6, OUTPUT);
       pinMode(i+7, OUTPUT);
       
-      configArray[i+1] = NOTUSED;
-      configArray[i+2] = NOTUSED;
-      configArray[i+3] = NOTUSED;
-      configArray[i+4] = NOTUSED;
-      configArray[i+5] = NOTUSED;
-      configArray[i+6] = NOTUSED;
-      configArray[i+7] = NOTUSED;
+      pinsConfig[i+1] = NOTUSED;
+      pinsConfig[i+2] = NOTUSED;
+      pinsConfig[i+3] = NOTUSED;
+      pinsConfig[i+4] = NOTUSED;
+      pinsConfig[i+5] = NOTUSED;
+      pinsConfig[i+6] = NOTUSED;
+      pinsConfig[i+7] = NOTUSED;
       
       break;
 #ifdef LCD
@@ -313,6 +313,11 @@ void setupPins(uint8_t configArray[], int numberOfPins) {
       break;
 #endif
     }
+}
+
+void setupPins(uint8_t configArray[], int numberOfPins) {
+  for (int i = 0; i<numberOfPins; i++) {
+    setupPinN(i);
   }
 }
 void setupAllPins() {
