@@ -38,7 +38,7 @@ void readAnalogPinFilter( int pin) {
 //    Serial.print(test);
   }
   analogFilter2[pin-DIGITAL_PIN_COUNT]++;
-  if (analogFilter2[pin-DIGITAL_PIN_COUNT] > 10) {
+  if (analogFilter2[pin-DIGITAL_PIN_COUNT] >= 10) {
     analogFilter2[pin-DIGITAL_PIN_COUNT] = 0;
   }
   
@@ -68,7 +68,7 @@ void readAnalogPinOverSample( int pin) {
 //    Serial.print(test);
   }
   analogFilter2[pin-DIGITAL_PIN_COUNT]++;
-  if (analogFilter2[pin-DIGITAL_PIN_COUNT] > 10) {
+  if (analogFilter2[pin-DIGITAL_PIN_COUNT] >= 10) {
     analogFilter2[pin-DIGITAL_PIN_COUNT] = 0;
   }
   
